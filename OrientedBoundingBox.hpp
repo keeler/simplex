@@ -45,6 +45,7 @@ class OrientedBoundingBox
         Vector3f getCenter() const;
         void setCenter( const Vector3f & newCenter );
 
+		// Max distance to a corner to center
         float getRadius() const;
 
         void translate( const Vector3f & translation );
@@ -67,7 +68,6 @@ class OrientedBoundingBox
         Vector3f mEdgeHalfLengths;
         Vector3f mOrthogonalAxes[3];
 
-        // Only used for collision detection
         float mRadius;    // Maximum distance to a corner
 };
 

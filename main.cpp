@@ -1,20 +1,23 @@
 #include "Vector3f.hpp"
 #include "OrientedBoundingBox.hpp"
+#include "Octree.hpp"
 #include <iostream>
 #include <cmath>
 #include <stdlib.h>
 #include <cstdlib>
+#include <map>
 #include "GL/glut.h"
 using namespace std;
 
 // Should be anything more than 20, see lines 29-31, NUM_BOXES/20
-const int NUM_BOXES = 500;
+const int NUM_BOXES = 3000;
 
-// Global; angle to rotate shapes by
+int _index = 0;
 float _angle = 30.0f;
 OrientedBoundingBox * _myBoxes;
 Vector3f * _rotationVectors;
 float * _rotationRates;
+Octree * _myOctree;
 
 void generateBoxes()
 {
@@ -66,6 +69,7 @@ void handleKeypress( unsigned char key, int x, int y )
             delete [] _myBoxes;
             delete [] _rotationVectors;
             delete [] _rotationRates;
+            delete _myOctree;
             exit( 0 );
     }
 }
@@ -77,11 +81,11 @@ void initRendering()
 	glEnable( GL_COLOR_MATERIAL );    // Allows us to color polygons
 
     // Use back-face culling
-    glEnable( GL_CULL_FACE );
+    glCullFace( GL_BACK );
 
     glEnable( GL_LIGHTING );    // Allows us to use light
     glEnable( GL_LIGHT0 );
-    glEnable( GL_NORMALIZE );
+  //  glEnable( GL_NORMALIZE );
 
     glShadeModel( GL_SMOOTH );
 }
@@ -94,7 +98,7 @@ void handleResize( int width, int height )
     glMatrixMode( GL_PROJECTION );
     // Set the camera perspective
     glLoadIdentity();    // Reset the camera
-    gluPerspective( 45.0, (double)width / (double)height, 1.0, 200.0 );
+    gluPerspective( 45.0, (double)width / (double)height, 1.0, 1000.0 );
 }
 
 void drawScene()
@@ -103,7 +107,7 @@ void drawScene()
     glMatrixMode( GL_MODELVIEW );
     glLoadIdentity();
 
-	glTranslatef( 0.0f, 0.0f, -NUM_BOXES / 8 );
+	glTranslatef( 0.0f, 0.0f, -100 );
 	glRotatef( _angle, 0.0f, 1.0f, 0.0f );
     glColor3f( 1.0f, 1.0f, 1.0f );
 
@@ -113,36 +117,37 @@ void drawScene()
 	glLightfv( GL_LIGHT0, GL_DIFFUSE, lightColor0 );
 	glLightfv( GL_LIGHT0, GL_POSITION, lightPos0 );
 
-    bool hit[NUM_BOXES];
+ //   _myOctree->drawOctreeFrame( Vector3f( 1.0f, 1.0f, 1.0f ) );
+
+    map<OrientedBoundingBox *, bool> hit;
     for( int i = 0; i < NUM_BOXES; i++ )
     {
-        hit[i] = false;
+        hit[ &_myBoxes[i] ] = false;
     }
-    for( int i = 0; i < NUM_BOXES; i++ )
+
+    vector<BoxPair> collisionPairs;
+    _myOctree->getPotentialCollisionPairs( collisionPairs );
+ //   cout << "Potential collisions " << collisionPairs.size() << endl;
+    for( unsigned int i = 0; i < collisionPairs.size(); i++ )
     {
-        for( int j = 0; j < NUM_BOXES; j++ )
+        if( collisionPairs[i].box1->collisionWith( *collisionPairs[i].box2 ) )
         {
-            if( i == j )
-            {
-                continue;
-            }
-            else if( _myBoxes[i].collisionWith( _myBoxes[j] ) )
-            {
-                hit[i] = true;
-                hit[j] = true;
-            }
+            hit[ collisionPairs[i].box1 ] = true;
+            hit[ collisionPairs[i].box2 ] = true;
         }
     }
 
-    for( int i = 0; i < NUM_BOXES; i++ )
+    for( map<OrientedBoundingBox *, bool>::iterator it = hit.begin();
+         it != hit.end();
+         it++ )
     {
-        if( hit[i] )
+        if( (*it).second )
         {
-            _myBoxes[i].draw( Vector3f( 1.0f, 0.0f, 0.0f ) );
+            (*it).first->draw( Vector3f( 1.0f, 0.0f, 0.0f ) );
         }
         else
         {
-            _myBoxes[i].draw( Vector3f( 1.0f, 1.0f, 1.0f ) );
+            (*it).first->draw( Vector3f( 0.0f, 1.0f, 1.0f ) );
         }
     }
 
@@ -165,7 +170,7 @@ void updateAngles( int value )
 
 	glutPostRedisplay();    // Tell GLUT that the scene has changed
 	// Tell GLUT to call update again in 25 milliseconds
-	glutTimerFunc( 10, updateAngles, 0 );
+	glutTimerFunc( 25, updateAngles, 0 );
 }
 
 int main( int argc, char **argv )
@@ -173,13 +178,20 @@ int main( int argc, char **argv )
     generateBoxes();
     generateRotationVectors();
 
+    _myOctree = new Octree( Vector3f( -NUM_BOXES / 20.0f, -NUM_BOXES / 20.0f, -NUM_BOXES / 20.0f ),
+                            Vector3f( NUM_BOXES / 20.0f, NUM_BOXES / 20.0f, NUM_BOXES / 20.0f ) );
+    for( int i = 0; i < NUM_BOXES; i++ )
+    {
+        _myOctree->addBox( &_myBoxes[i] );
+    }
+
     glutInit( &argc, argv );
     glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
     glutInitWindowSize( 400, 400 );
 
     cout << "Number of boxes: " << NUM_BOXES << endl;
 
-    glutCreateWindow( "Collision Demo" );
+    glutCreateWindow( "Octree Demo" );
     initRendering();
 
     glutDisplayFunc( drawScene );
@@ -187,7 +199,7 @@ int main( int argc, char **argv )
     glutReshapeFunc( handleResize );
 
 	// Add a timer to initiate the updating loop
-	glutTimerFunc( 10, updateAngles, 0 );
+	glutTimerFunc( 25, updateAngles, 0 );
 
     glutMainLoop();
     return 0;

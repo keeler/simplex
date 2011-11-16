@@ -58,8 +58,7 @@ void OrientedBoundingBox::rotate( Vector3f axis, float degrees )
     {
         Vector3f v = mOrthogonalAxes[i];
         // Formula found on Wolfram Mathworld
-        v = v * c + axis * axis.dot( v ) * ( 1 - c ) + v.cross( axis ) * s;
-        mOrthogonalAxes[i] = v.normalize();
+        mOrthogonalAxes[i] = v * c + axis * axis.dot( v ) * ( 1 - c ) + v.cross( axis ) * s;
     }
 }
 
@@ -237,8 +236,7 @@ void OrientedBoundingBox::draw( const Vector3f & color ) const
 	glEnd();
 }
 
-// Precalculate the corner points whenever the box moves/rotates/whatever so that collision
-// detection will be faster;
+// Calculate the corner points of the box; used for collision detection and drawing
 void OrientedBoundingBox::calculateCornerPoints( Vector3f corners[] ) const
 {
     corners[0] = mCenter - mOrthogonalAxes[0] * mEdgeHalfLengths[0]
