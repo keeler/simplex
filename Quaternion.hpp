@@ -7,11 +7,11 @@ class Quaternion
 {
 	public:
 		Quaternion();
-		Quaternion( float w, float x, float y, float z );
+		Quaternion( float W, float X, float Y, float Z );
 		Quaternion( const Vector3f & axis, float angle );
 		~Quaternion();
 
-		Quaternion operator*( const Quaternion & other ) const;
+		Quaternion operator*( const Quaternion & rhs ) const { return Quaternion( w * rhs.w - x * rhs.x - y * rhs.y - z * rhs.z, w * rhs.x + x * rhs.w + y * rhs.z - z * rhs.y, w * rhs.y - x * rhs.z + y * rhs.w + z * rhs.x, w * rhs.z + x * rhs.y - y * rhs.x + z * rhs.w ); };
 		// Multiplying a quaternion q with a vector v applies the q-rotation to v
 		// To apply a quaternion-rotation to a vector, you need to multiply the
 		// vector by the quaternion and its conjugate
@@ -21,7 +21,7 @@ class Quaternion
 		void getAxisAndAngle( Vector3f & axis, float & angle ) const;
 
 		void normalize();
-		Quaternion getConjugate() const;
+		Quaternion getConjugate() const { return Quaternion( w, -x, -y, -z ); };
 
 		friend std::ostream &operator<<( std::ostream & os, const Quaternion & quaternion );
 	

@@ -42,11 +42,11 @@ class OrientedBoundingBox
         // they correspond.
         OrientedBoundingBox( const Vector3f & center, const Vector3f & edgeHalfLengths, Vector3f orthogonalAxes[] );
 
-        Vector3f getCenter() const;
-        void setCenter( const Vector3f & newCenter );
+        Vector3f getCenter() const { return mCenter; };
+        void setCenter( const Vector3f & newCenter ) { mCenter = newCenter; };
 
 		// Max distance to a corner to center
-        float getRadius() const;
+        float getRadius() const { return mRadius; };
 
         void rotate( Vector3f axis, float degrees );
 
@@ -55,13 +55,14 @@ class OrientedBoundingBox
 
         void printCornerPoints( std::ostream & os ) const;
 
-        void move( const Vector3f & velocity );
+        void move( const Vector3f & velocity ) { mCenter += velocity; };
         void draw( const Vector3f & color ) const;
 
     private:
         // Needed for collisionWith( OBB ) and drawing
         void calculateCornerPoints( Vector3f corners[] ) const;
-        void calculateRadius();
+        // radius = sqrt( a^2 + b^2 + c^2 ), need to multiply the halfEdgeLengths by 2 to get a, b, and c
+        void calculateRadius() { mRadius = ( mEdgeHalfLengths * 2 ).magnitude() / 2; };
 
         Vector3f mCenter;
         Vector3f mEdgeHalfLengths;

@@ -21,13 +21,13 @@ struct BoxPair
 class Octree
 {
     public:
-        Octree( Vector3f minCorner, Vector3f maxCorner );
-        ~Octree();
+        Octree( const Vector3f & minCorner, const Vector3f & maxCorner );
+        ~Octree() { destroyOctreeNode( mRoot ); };
 
-        void addBox( OrientedBoundingBox * box );
-        void removeBox( OrientedBoundingBox * box );
-        void getPotentialCollisionPairs( std::vector<BoxPair> & pairs ) const;
-        void draw( Vector3f color ) const;
+        void addBox( OrientedBoundingBox * box ) { insertBox( box, mRoot ); };
+        void removeBox( OrientedBoundingBox * box ) { removeBox( box, mRoot ); };
+        void getPotentialCollisionPairs( std::vector<BoxPair> & pairs ) const { getPotentialCollisionPairs( mRoot, pairs ); };
+        void draw( Vector3f color ) const { drawNodeAndChildren( mRoot, color ); };
 
     private:
         // One eighth of the space. Each level has 8 of these, hence octree.
@@ -46,26 +46,26 @@ class Octree
         };
 
         // Initializes an allocated node to have no boxes, no children, etc.
-        void initializeNode( OctreeNode * node, Vector3f minCorner, Vector3f maxCorner, int depth );
+        static void initializeNode( OctreeNode * const node, const Vector3f & minCorner, const Vector3f & maxCorner, int depth );
         // Allocate and initialize children, put boxes from parent into children
         // based on their position
-        void createChildren( OctreeNode * node );
+        static void createChildren( OctreeNode * const node );
         // Insert the box into the appropriate node in the octree. Helper for addBox()
-        void insertBox( OrientedBoundingBox * box, OctreeNode * node );
+        static void insertBox( OrientedBoundingBox * const box, OctreeNode * const node );
         // Remove the box from this node in the octree. Helper for public removeBox()
-        void removeBox( OrientedBoundingBox * box, OctreeNode * node );
+        static void removeBox( OrientedBoundingBox * const box, OctreeNode * const node );
         // Collect the boxes of the children of this node into the set
-        void collectBoxesFromChildren( OctreeNode * node, std::set<OrientedBoundingBox *> & collectedBoxes );
+        static void collectBoxesFromChildren( OctreeNode * const node, std::set<OrientedBoundingBox *> & collectedBoxes );
         // Destroy the children of this node, and collect all their boxes into this node
-        void collapseChildren( OctreeNode * node );
+        static void collapseChildren( OctreeNode * const node );
         // Deallocate all of the nodes in the tree below & including this one.
         // Kill all the children, too :(
-        void destroyOctreeNode( OctreeNode * node );
+        static void destroyOctreeNode( OctreeNode *& node );
         // Populates the vector with potential collision pairs
-        void getPotentialCollisionPairs( OctreeNode * node, std::vector<BoxPair> & pairs ) const;
+        static void getPotentialCollisionPairs( OctreeNode *const node, std::vector<BoxPair> & pairs );
 
         // Draw the outlines of the space divvied up by the octree
-        void drawNodeAndChildren( OctreeNode * node, Vector3f color ) const;
+        static void drawNodeAndChildren( OctreeNode * const node, const Vector3f & color );
 
         OctreeNode * mRoot;
 };

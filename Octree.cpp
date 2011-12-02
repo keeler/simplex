@@ -1,7 +1,7 @@
 #include "Octree.hpp"
 #include "GL/glut.h"
 
-Octree::Octree( Vector3f minCorner, Vector3f maxCorner )
+Octree::Octree( const Vector3f & minCorner, const Vector3f & maxCorner )
 {
     mRoot = new OctreeNode;
 
@@ -9,32 +9,7 @@ Octree::Octree( Vector3f minCorner, Vector3f maxCorner )
     initializeNode( mRoot, minCorner, maxCorner, 1 );
 }
 
-Octree::~Octree()
-{
-    destroyOctreeNode( mRoot );
-}
-
-void Octree::addBox( OrientedBoundingBox * box )
-{
-    insertBox( box, mRoot );
-}
-
-void Octree::removeBox( OrientedBoundingBox * box )
-{
-    removeBox( box, mRoot );
-}
-
-void Octree::draw( Vector3f color ) const
-{
-    drawNodeAndChildren( mRoot, color );
-}
-
-void Octree::getPotentialCollisionPairs( std::vector<BoxPair> & pairs ) const
-{
-    getPotentialCollisionPairs( mRoot, pairs );
-}
-
-void Octree::initializeNode( OctreeNode * node, Vector3f minCorner, Vector3f maxCorner, int depth )
+void Octree::initializeNode( OctreeNode * const node, const Vector3f & minCorner, const Vector3f & maxCorner, int depth )
 {
     node->minCorner = minCorner;
     node->maxCorner = maxCorner;
@@ -47,7 +22,7 @@ void Octree::initializeNode( OctreeNode * node, Vector3f minCorner, Vector3f max
     node->depth = depth;
 }
 
-void Octree::createChildren( OctreeNode * node )
+void Octree::createChildren( OctreeNode * const node )
 {
     for( int x = 0; x < 2; x++ )
     {
@@ -113,10 +88,9 @@ void Octree::createChildren( OctreeNode * node )
     node->numBoxes = 0;
     for( std::set<OrientedBoundingBox *>::iterator it = node->boxes.begin();
          it != node->boxes.end();
-         it++)
+         ++it )
     {
-        OrientedBoundingBox * box = *it;
-        insertBox( box, node );
+        insertBox( *it, node );
     }
     node->boxes.clear();
 }
@@ -124,7 +98,7 @@ void Octree::createChildren( OctreeNode * node )
 // Insert the box into the appropriate node in the octree
 // Will create children if necessary, and insert the box in the
 // appropriate child(ren)
-void Octree::insertBox( OrientedBoundingBox * box, OctreeNode * node )
+void Octree::insertBox( OrientedBoundingBox * const box, OctreeNode * const node )
 {
     // If this node has no children, but can, create its children
     if( !node->hasChildren &&
@@ -204,7 +178,7 @@ void Octree::insertBox( OrientedBoundingBox * box, OctreeNode * node )
 }
 
 // Removes the box from this node, helper function for public version
-void Octree::removeBox( OrientedBoundingBox * box, OctreeNode * node )
+void Octree::removeBox( OrientedBoundingBox * const box, OctreeNode * const node )
 {
     // Removing a box, keep track
     node->numBoxes--;
@@ -280,110 +254,100 @@ void Octree::removeBox( OrientedBoundingBox * box, OctreeNode * node )
     }
 }
 
-void Octree::collectBoxesFromChildren( OctreeNode * node, std::set<OrientedBoundingBox *> & collectedBoxes )
+void Octree::collectBoxesFromChildren( OctreeNode * const node, std::set<OrientedBoundingBox *> & collectedBoxes )
 {
     // Recurse on children
     if( node->hasChildren )
     {
-        for( int x = 0; x < 2; x++ )
-        {
-            for( int y = 0; y < 2; y++ )
-            {
-                for( int z = 0; z < 2; z++ )
-                {
-                    collectBoxesFromChildren( node->children[x][y][z], collectedBoxes );
-                }
-            }
-        }
+        collectBoxesFromChildren( node->children[0][0][0], collectedBoxes );
+        collectBoxesFromChildren( node->children[0][0][1], collectedBoxes );
+        collectBoxesFromChildren( node->children[0][1][0], collectedBoxes );
+        collectBoxesFromChildren( node->children[0][1][1], collectedBoxes );
+        collectBoxesFromChildren( node->children[1][0][0], collectedBoxes );
+        collectBoxesFromChildren( node->children[1][0][1], collectedBoxes );
+        collectBoxesFromChildren( node->children[1][1][0], collectedBoxes );
+        collectBoxesFromChildren( node->children[1][1][1], collectedBoxes );
     }
     // For leaf nodes
     else
     {
         for( std::set<OrientedBoundingBox *>::iterator it = node->boxes.begin();
              it != node->boxes.end();
-             it++ )
+             ++it )
         {
-            OrientedBoundingBox * box = *it;
-            collectedBoxes.insert( box );
+            collectedBoxes.insert( *it );
         }
     }
 }
 
-void Octree::collapseChildren( OctreeNode * node )
+void Octree::collapseChildren( OctreeNode * const node )
 {
     collectBoxesFromChildren( node, node->boxes );
 
     if( node->hasChildren )
     {
-        for( int x = 0; x < 2; x++ )
-        {
-            for( int y = 0; y < 2; y++ )
-            {
-                for( int z = 0; z < 2; z++ )
-                {
-                    destroyOctreeNode( node->children[x][y][z] );
-                }
-            }
-        }
+        destroyOctreeNode( node->children[0][0][0] );
+        destroyOctreeNode( node->children[0][0][1] );
+        destroyOctreeNode( node->children[0][1][0] );
+        destroyOctreeNode( node->children[0][1][1] );
+        destroyOctreeNode( node->children[1][0][0] );
+        destroyOctreeNode( node->children[1][0][1] );
+        destroyOctreeNode( node->children[1][1][0] );
+        destroyOctreeNode( node->children[1][1][1] );
     }
 
     node->hasChildren = false;
 }
 
-void Octree::destroyOctreeNode( OctreeNode * node )
+void Octree::destroyOctreeNode( OctreeNode *& node )
 {
     // Must destroy my children before destroying myself.
     // Feel like psycho typing such things.
     if( node->hasChildren )
     {
-        for( int x = 0; x < 2; x++ )
-        {
-            for( int y = 0; y < 2; y++ )
-            {
-                for( int z = 0; z < 2; z++ )
-                {
-                    destroyOctreeNode( node->children[x][y][z] );
-                }
-            }
-        }
+        destroyOctreeNode( node->children[0][0][0] );
+        destroyOctreeNode( node->children[0][0][1] );
+        destroyOctreeNode( node->children[0][1][0] );
+        destroyOctreeNode( node->children[0][1][1] );
+        destroyOctreeNode( node->children[1][0][0] );
+        destroyOctreeNode( node->children[1][0][1] );
+        destroyOctreeNode( node->children[1][1][0] );
+        destroyOctreeNode( node->children[1][1][1] );
     }
 
     delete node;
+    node = NULL;
 }
 
-void Octree::getPotentialCollisionPairs( OctreeNode * node, std::vector<BoxPair> & pairs ) const
+void Octree::getPotentialCollisionPairs( OctreeNode * const node, std::vector<BoxPair> & pairs )
 {
     if( node->hasChildren )
     {
-        for( int x = 0; x < 2; x++ )
-        {
-            for( int y = 0; y < 2; y++ )
-            {
-                for( int z = 0; z < 2; z++ )
-                {
-                    getPotentialCollisionPairs( node->children[x][y][z], pairs );
-                }
-            }
-        }
+        getPotentialCollisionPairs( node->children[0][0][0], pairs );
+        getPotentialCollisionPairs( node->children[0][0][1], pairs );
+        getPotentialCollisionPairs( node->children[0][1][0], pairs );
+        getPotentialCollisionPairs( node->children[0][1][1], pairs );
+        getPotentialCollisionPairs( node->children[1][0][0], pairs );
+        getPotentialCollisionPairs( node->children[1][0][1], pairs );
+        getPotentialCollisionPairs( node->children[1][1][0], pairs );
+        getPotentialCollisionPairs( node->children[1][1][1], pairs );
     }
     else
     {
         for( std::set<OrientedBoundingBox *>::iterator it = node->boxes.begin();
              it != node->boxes.end();
-             it++ )
+             ++it )
         {
-            OrientedBoundingBox * box1 = *it;
             for( std::set<OrientedBoundingBox *>::iterator it2 = node->boxes.begin();
                  it2 != node->boxes.end();
-                 it2++ )
+                 ++it2 )
             {
-                OrientedBoundingBox * box2 = *it2;
                 // This test makes sure that we only add each pair once
-                if( box1 < box2)
+                if( *it < *it2 )
                 {
                     BoxPair pair;
-                    pair.box1 = box1;
-                    pair.box2 = box2;
+                    pair.box1 = *it;
+                    pair.box2 = *it2;
                     pairs.push_back( pair );
                 }
             }
@@ -391,7 +355,7 @@ void Octree::getPotentialCollisionPairs( OctreeNode * node, std::vector<BoxPair>
     }
 }
 
-void Octree::drawNodeAndChildren( OctreeNode * node, Vector3f color ) const
+void Octree::drawNodeAndChildren( OctreeNode * const node, const Vector3f & color )
 {
     // Draw octree partitions as wireframe cubes
     glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );

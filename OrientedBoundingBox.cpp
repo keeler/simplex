@@ -3,58 +3,40 @@
 #include <cstdlib>
 #include <GL/glut.h>
 
-OrientedBoundingBox::OrientedBoundingBox()
-{
-    mCenter = Vector3f( 0.0f, 0.0f, 0.0f );
-    mEdgeHalfLengths = Vector3f( 1.0f, 1.0f, 1.0f );
+#define PI_OVER_180 0.0174532925f
 
+OrientedBoundingBox::OrientedBoundingBox() :
+    mCenter( Vector3f( 0.0f, 0.0f, 0.0f ) ),
+    mEdgeHalfLengths( Vector3f( 1.0f, 1.0f, 1.0f ) )
+{
     mOrthogonalAxes[0] = Vector3f( 1.0f, 0.0f, 0.0f );
     mOrthogonalAxes[1] = Vector3f( 0.0f, 1.0f, 0.0f );
     mOrthogonalAxes[2] = Vector3f( 0.0f, 0.0f, 1.0f );
 
-    calculateRadius();
+    this->calculateRadius();
 }
 
-OrientedBoundingBox::OrientedBoundingBox( const Vector3f & center, const Vector3f & edgeHalfLengths, Vector3f orthogonalAxes[] )
+OrientedBoundingBox::OrientedBoundingBox( const Vector3f & center, const Vector3f & edgeHalfLengths, Vector3f orthogonalAxes[] ) :
+    mCenter( center ),
+    mEdgeHalfLengths( edgeHalfLengths )
 {
-    mCenter = center;
-    mEdgeHalfLengths = edgeHalfLengths;
-
     mOrthogonalAxes[0] = orthogonalAxes[0].normalize();
     mOrthogonalAxes[1] = orthogonalAxes[1].normalize();
     mOrthogonalAxes[2] = orthogonalAxes[2].normalize();
 
-    calculateRadius();
-}
-
-Vector3f OrientedBoundingBox::getCenter() const
-{
-    return mCenter;
-}
-
-void OrientedBoundingBox::setCenter( const Vector3f & newCenter )
-{
-    mCenter = newCenter;
-}
-
-float OrientedBoundingBox::getRadius() const
-{
-    return mRadius;
+    this->calculateRadius();
 }
 
 void OrientedBoundingBox::rotate( Vector3f axis, float degrees )
 {
     axis = axis.normalize();
-    float radians = degrees * 3.14159265 / 180;
+    float radians = degrees * PI_OVER_180;
     float s = sin( radians );
     float c = cos( radians );
 
-    for( int i = 0; i < 3; i++ )
-    {
-        Vector3f v = mOrthogonalAxes[i];
-        // Formula found on Wolfram Mathworld
-        mOrthogonalAxes[i] = v * c + axis * axis.dot( v ) * ( 1 - c ) + v.cross( axis ) * s;
-    }
+    mOrthogonalAxes[0] = mOrthogonalAxes[0] * c + axis * axis.dot( mOrthogonalAxes[0] ) * ( 1 - c ) + mOrthogonalAxes[0].cross( axis ) * s;
+    mOrthogonalAxes[1] = mOrthogonalAxes[1] * c + axis * axis.dot( mOrthogonalAxes[1] ) * ( 1 - c ) + mOrthogonalAxes[1].cross( axis ) * s;
+    mOrthogonalAxes[2] = mOrthogonalAxes[2] * c + axis * axis.dot( mOrthogonalAxes[2] ) * ( 1 - c ) + mOrthogonalAxes[2].cross( axis ) * s;
 }
 
 bool OrientedBoundingBox::isPointInside( const Vector3f & point ) const
@@ -92,7 +74,7 @@ bool OrientedBoundingBox::collisionWith( const OrientedBoundingBox & otherBox ) 
     Vector3f thisCorners[8];
     Vector3f otherCorners[8];
 
-    calculateCornerPoints( thisCorners );
+    this->calculateCornerPoints( thisCorners );
     otherBox.calculateCornerPoints( otherCorners );
 
     // These corner points should be precalculated already
@@ -172,11 +154,6 @@ bool OrientedBoundingBox::collisionWith( const OrientedBoundingBox & otherBox ) 
     
     // No separating axis has been found, a collision MUST exist.
     return true;
-}
-
-void OrientedBoundingBox::move( const Vector3f & velocity )
-{
-    mCenter += velocity;
 }
 
 void OrientedBoundingBox::draw( const Vector3f & color ) const
@@ -260,17 +237,10 @@ void OrientedBoundingBox::calculateCornerPoints( Vector3f corners[] ) const
                          + mOrthogonalAxes[2] * mEdgeHalfLengths[2];
 }
 
-void OrientedBoundingBox::calculateRadius()
-{
-    // radius = sqrt( a^2 + b^2 + c^2 ), need to multiply the halfEdgeLengths by 2
-    // to get a, b, and c
-    mRadius = ( mEdgeHalfLengths * 2 ).magnitude() / 2; 
-}
-
 void OrientedBoundingBox::printCornerPoints( std::ostream & os ) const
 {
     Vector3f cornerPoints[8];
-    calculateCornerPoints( cornerPoints );
+    this->calculateCornerPoints( cornerPoints );
 
     for( int i = 0; i < 8; i++ )
     {

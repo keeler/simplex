@@ -8,10 +8,10 @@ class Camera
 {
 	public:
 		Camera();
-		Camera( Vector3f position, float yawDegrees, float pitchDegreeszz );
+		Camera( const Vector3f & position, float yawDegrees, float pitchDegreeszz );
 		~Camera();
 
-		void setPosition( const Vector3f & position );
+		void setPosition( const Vector3f & position ) { mPosition = position; };
 
 		void moveForward( float amount );
 		void moveBackward( float amount );

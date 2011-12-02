@@ -6,30 +6,28 @@ using std::endl;
 
 #define PI_OVER_180 0.0174532925f
 
-Quaternion::Quaternion()
+Quaternion::Quaternion() :
+	w( 1.0f ),
+	x( 0.0f ),
+	y( 0.0f ),
+	z( 0.0f )
 {
-	w = 1.0f;
-	x = 0.0f;
-	y = 0.0f;
-	z = 0.0f;
-
-	normalize();
+	this->normalize();
 }
 
-Quaternion::Quaternion( float w, float x, float y, float z )
+Quaternion::Quaternion( float W, float X, float Y, float Z ) :
+	w( W ),
+	x( X ),
+	y( Y ),
+	z( Z )
 {
-	this->w = w;
-	this->x = x;
-	this->y = y;
-	this->z = z;
-
-	normalize();
+	this->normalize();
 }
 
 Quaternion::Quaternion( const Vector3f & axis, float angle )
 {
 	angle *= PI_OVER_180;
-	angle /= 2.0f;
+	angle *= 0.5f;
 
 	float s = sin( angle );
 
@@ -40,19 +38,11 @@ Quaternion::Quaternion( const Vector3f & axis, float angle )
 	y = normalAxis[1] * s;
 	z = normalAxis[2] * s;
 
-	normalize();
+	this->normalize();
 }
 
 Quaternion::~Quaternion()
 {
-}
-
-Quaternion Quaternion::operator*( const Quaternion & other ) const
-{
-	return Quaternion( w * other.w - x * other.x - y * other.y - z * other.z,
-					   w * other.x + x * other.w + y * other.z - z * other.y,
-	                   w * other.y - x * other.z + y * other.w + z * other.x,
-	                   w * other.z + x * other.y - y * other.x + z * other.w );
 }
 
 // Multiplying a quaternion q with a vector v applies the q-rotation to v
@@ -68,9 +58,7 @@ Vector3f Quaternion::operator*( const Vector3f & vector ) const
 	vectorQuaternion.z = normalizedVector[2];
 	vectorQuaternion.w = 0.0f;
  
-	Quaternion resultQuaternion;
-	resultQuaternion = vectorQuaternion * getConjugate();
-	resultQuaternion = *this * resultQuaternion;
+	Quaternion resultQuaternion = *this * ( vectorQuaternion * getConjugate() );
  
 	return Vector3f( resultQuaternion.x, resultQuaternion.y, resultQuaternion.z );
 }
@@ -112,15 +100,9 @@ void Quaternion::normalize()
 	z /= magnitude;
 }
 
-Quaternion Quaternion::getConjugate() const
-{
-	return Quaternion( w, -x, -y, -z );
-}
-
 std::ostream &operator<<( std::ostream & os, const Quaternion & quaternion )
 {
-	cout << '(' << quaternion.w << ", " << quaternion.x << ", "
-		 << quaternion.y << ", " << quaternion.z << ')';
+	cout << '(' << quaternion.w << ", " << quaternion.x << ", " << quaternion.y << ", " << quaternion.z << ')';
 
 	return os;
 }

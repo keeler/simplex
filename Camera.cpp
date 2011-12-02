@@ -3,28 +3,22 @@
 
 #define PI_OVER_180 0.0174532925f
 
-Camera::Camera()
+Camera::Camera() :
+	mPosition( Vector3f() ),
+	mRotation( Quaternion() )
 {
-	mPosition = Vector3f();
-	mRotation = Quaternion();
 }
 
-Camera::Camera( Vector3f position, float yawDegrees, float pitchDegrees )
+Camera::Camera( const Vector3f & position, float yawDegrees, float pitchDegrees ) :
+	mPosition( position ),
+	mRotation( Quaternion() )
 {
-	mPosition = position;
-
-	mRotation = Quaternion();
-	rotateYaw( yawDegrees );
-	rotatePitch( pitchDegrees );
+	this->rotateYaw( yawDegrees );
+	this->rotatePitch( pitchDegrees );
 }
 
 Camera::~Camera()
 {
-}
-
-void Camera::setPosition( const Vector3f & position )
-{
-	mPosition = position;
 }
 
 // For each of the move functions, apply the camera's current
