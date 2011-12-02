@@ -24,60 +24,24 @@ void Octree::initializeNode( OctreeNode * const node, const Vector3f & minCorner
 
 void Octree::createChildren( OctreeNode * const node )
 {
-    for( int x = 0; x < 2; x++ )
-    {
-        float minX;
-        float maxX;
-        if( x == 0 )
-        {
-            minX = node->minCorner[0];
-            maxX = node->center[0];
-        }
-        else
-        {
-            minX = node->center[0];
-            maxX = node->maxCorner[0];
-        }
+	node->children[0][0][0] = new OctreeNode;
+	node->children[0][0][1] = new OctreeNode;
+	node->children[0][1][0] = new OctreeNode;
+	node->children[0][1][1] = new OctreeNode;
+	node->children[1][0][0] = new OctreeNode;
+	node->children[1][0][1] = new OctreeNode;
+	node->children[1][1][0] = new OctreeNode;
+	node->children[1][1][1] = new OctreeNode;
 
-        for( int y = 0; y < 2; y++ )
-        {
-            float minY;
-            float maxY;
-            if( y == 0 )
-            {
-                minY = node->minCorner[1];
-                maxY = node->center[1];
-            }
-            else
-            {
-                minY = node->center[1];
-                maxY = node->maxCorner[1];
-            }
-
-            for( int z = 0; z < 2; z++ )
-            {
-                float minZ;
-                float maxZ;
-                if( z == 0 )
-                {
-                    minZ = node->minCorner[2];
-                    maxZ = node->center[2];
-                }
-                else
-                {
-                    minZ = node->center[2];
-                    maxZ = node->maxCorner[2];
-                }
-
-                node->children[x][y][z] = new OctreeNode;
-
-                Vector3f minCorner( minX, minY, minZ );
-                Vector3f maxCorner( maxX, maxY, maxZ );
-
-                initializeNode( node->children[x][y][z], minCorner, maxCorner, node->depth + 1 );
-            }
-        }
-    }
+	int newDepth = node->depth + 1;
+	initializeNode( node->children[0][0][0], Vector3f( node->minCorner[0], node->minCorner[1], node->minCorner[2] ), Vector3f( node->center[0],    node->center[1],    node->center[2] ),    newDepth );
+	initializeNode( node->children[0][0][1], Vector3f( node->minCorner[0], node->minCorner[1], node->center[2] ),    Vector3f( node->center[0],    node->center[1],    node->maxCorner[2] ), newDepth );
+	initializeNode( node->children[0][1][0], Vector3f( node->minCorner[0], node->center[1],    node->minCorner[2] ), Vector3f( node->center[0],    node->maxCorner[1], node->center[2] ),    newDepth );
+	initializeNode( node->children[0][1][1], Vector3f( node->minCorner[0], node->center[1],    node->center[2] ),    Vector3f( node->center[0],    node->maxCorner[1], node->maxCorner[2] ), newDepth );
+	initializeNode( node->children[1][0][0], Vector3f( node->center[0],    node->minCorner[1], node->minCorner[2] ), Vector3f( node->maxCorner[0], node->center[1],    node->maxCorner[2] ), newDepth );
+	initializeNode( node->children[1][0][1], Vector3f( node->center[0],    node->minCorner[1], node->center[2] ),    Vector3f( node->maxCorner[0], node->center[1],    node->center[2] ),    newDepth );
+	initializeNode( node->children[1][1][0], Vector3f( node->center[0],    node->center[1],    node->minCorner[2] ), Vector3f( node->maxCorner[0], node->maxCorner[1], node->maxCorner[2] ), newDepth );
+	initializeNode( node->children[1][1][1], Vector3f( node->center[0],    node->center[1],    node->center[2] ),    Vector3f( node->maxCorner[0], node->maxCorner[1], node->center[2] ),    newDepth );
 
     // Now, node has children
     node->hasChildren = true;
