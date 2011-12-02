@@ -123,7 +123,7 @@ Vector3f Vector3f::cross( const Vector3f & other ) const
 				   mComponents[0] * other.mComponents[1] - mComponents[1] * other.mComponents[0] );
 }
 
-std::ostream &operator<< (std::ostream & os, const Vector3f & vector)
+std::ostream &operator<<( std::ostream & os, const Vector3f & vector )
 {
     std::cout << '(' << vector[0] << ", " << vector[1] << ", " << vector[2] << ')';
 	return os;

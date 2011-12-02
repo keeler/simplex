@@ -27,7 +27,7 @@ class Octree
         void addBox( OrientedBoundingBox * box );
         void removeBox( OrientedBoundingBox * box );
         void getPotentialCollisionPairs( std::vector<BoxPair> & pairs ) const;
-        void drawOctreeFrame( Vector3f color ) const;
+        void draw( Vector3f color ) const;
 
     private:
         // One eighth of the space. Each level has 8 of these, hence octree.

@@ -6,11 +6,11 @@
 OrientedBoundingBox::OrientedBoundingBox()
 {
     mCenter = Vector3f( 0.0f, 0.0f, 0.0f );
-    mEdgeHalfLengths = Vector3f( 0.0f, 0.0f, 0.0f );
+    mEdgeHalfLengths = Vector3f( 1.0f, 1.0f, 1.0f );
 
-    mOrthogonalAxes[0] = Vector3f( 0.0f, 0.0f, 0.0f );
-    mOrthogonalAxes[1] = Vector3f( 0.0f, 0.0f, 0.0f );
-    mOrthogonalAxes[2] = Vector3f( 0.0f, 0.0f, 0.0f );
+    mOrthogonalAxes[0] = Vector3f( 1.0f, 0.0f, 0.0f );
+    mOrthogonalAxes[1] = Vector3f( 0.0f, 1.0f, 0.0f );
+    mOrthogonalAxes[2] = Vector3f( 0.0f, 0.0f, 1.0f );
 
     calculateRadius();
 }
@@ -40,11 +40,6 @@ void OrientedBoundingBox::setCenter( const Vector3f & newCenter )
 float OrientedBoundingBox::getRadius() const
 {
     return mRadius;
-}
-
-void OrientedBoundingBox::translate( const Vector3f & translation )
-{
-    mCenter += translation;
 }
 
 void OrientedBoundingBox::rotate( Vector3f axis, float degrees )

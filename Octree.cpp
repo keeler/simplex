@@ -24,7 +24,7 @@ void Octree::removeBox( OrientedBoundingBox * box )
     removeBox( box, mRoot );
 }
 
-void Octree::drawOctreeFrame( Vector3f color ) const
+void Octree::draw( Vector3f color ) const
 {
     drawNodeAndChildren( mRoot, color );
 }

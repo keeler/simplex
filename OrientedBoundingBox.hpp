@@ -48,7 +48,6 @@ class OrientedBoundingBox
 		// Max distance to a corner to center
         float getRadius() const;
 
-        void translate( const Vector3f & translation );
         void rotate( Vector3f axis, float degrees );
 
         bool isPointInside( const Vector3f & point ) const;

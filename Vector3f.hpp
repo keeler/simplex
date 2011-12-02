@@ -33,7 +33,7 @@ class Vector3f
 		float mComponents[3];
 };
 
-std::ostream &operator<< (std::ostream & os, const Vector3f & vector);
+std::ostream &operator<<( std::ostream & os, const Vector3f & vector );
 
 #endif
 
