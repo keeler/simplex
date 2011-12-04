@@ -2,6 +2,7 @@
 #define ORIENTED_BOUNDING_BOX_HPP
 
 #include "Vector3f.hpp"
+#include "Quaternion.hpp"
 #include <iostream>
 
 // Notes on orientation of corners and axes.
@@ -40,7 +41,7 @@ class OrientedBoundingBox
         // Center, 3 normalized orthogonal axes indicating orientation, and 3 edge half lengths
         // The order of the edge half lengths should match the respective dimensions to which
         // they correspond.
-        OrientedBoundingBox( const Vector3f & center, const Vector3f & edgeHalfLengths, Vector3f orthogonalAxes[] );
+        OrientedBoundingBox( const Vector3f & center, const Vector3f & edgeHalfLengths, const Quaternion & orientation );
 
         Vector3f getCenter() const { return mCenter; };
         void setCenter( const Vector3f & newCenter ) { mCenter = newCenter; };
@@ -48,25 +49,25 @@ class OrientedBoundingBox
 		// Max distance to a corner to center
         float getRadius() const { return mRadius; };
 
-        void rotate( Vector3f axis, float degrees );
+        void rotate( const Vector3f & axis, float degrees );
 
         bool isPointInside( const Vector3f & point ) const;
         bool collisionWith( const OrientedBoundingBox & otherBox ) const;
-
-        void printCornerPoints( std::ostream & os ) const;
 
         void move( const Vector3f & velocity ) { mCenter += velocity; };
         void draw( const Vector3f & color ) const;
 
     private:
         // Needed for collisionWith( OBB ) and drawing
-        void calculateCornerPoints( Vector3f corners[] ) const;
+        static void calculateCornerPoints( Vector3f corners[], const Vector3f & center, const Vector3f & edgeHalfLengths, const Quaternion & orientation );
+        // Used for collision detection
+        static void calculateOrthogonalAxes( Vector3f axes[], const Quaternion & orientation );
         // radius = sqrt( a^2 + b^2 + c^2 ), need to multiply the halfEdgeLengths by 2 to get a, b, and c
         void calculateRadius() { mRadius = ( mEdgeHalfLengths * 2 ).magnitude() / 2; };
 
-        Vector3f mCenter;
-        Vector3f mEdgeHalfLengths;
-        Vector3f mOrthogonalAxes[3];
+        Vector3f   mCenter;
+        Vector3f   mEdgeHalfLengths;
+        Quaternion mOrientation;
 
         float mRadius;    // Maximum distance to a corner
 };

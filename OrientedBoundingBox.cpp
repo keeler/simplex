@@ -7,36 +7,25 @@
 
 OrientedBoundingBox::OrientedBoundingBox() :
     mCenter( Vector3f( 0.0f, 0.0f, 0.0f ) ),
-    mEdgeHalfLengths( Vector3f( 1.0f, 1.0f, 1.0f ) )
+    mEdgeHalfLengths( Vector3f( 1.0f, 1.0f, 1.0f ) ),
+    mOrientation( Quaternion() )
 {
-    mOrthogonalAxes[0] = Vector3f( 1.0f, 0.0f, 0.0f );
-    mOrthogonalAxes[1] = Vector3f( 0.0f, 1.0f, 0.0f );
-    mOrthogonalAxes[2] = Vector3f( 0.0f, 0.0f, 1.0f );
-
     this->calculateRadius();
 }
 
-OrientedBoundingBox::OrientedBoundingBox( const Vector3f & center, const Vector3f & edgeHalfLengths, Vector3f orthogonalAxes[] ) :
+OrientedBoundingBox::OrientedBoundingBox( const Vector3f & center, const Vector3f & edgeHalfLengths, const Quaternion & orientation ) :
     mCenter( center ),
-    mEdgeHalfLengths( edgeHalfLengths )
+    mEdgeHalfLengths( edgeHalfLengths ),
+    mOrientation( orientation )
 {
-    mOrthogonalAxes[0] = orthogonalAxes[0].normalize();
-    mOrthogonalAxes[1] = orthogonalAxes[1].normalize();
-    mOrthogonalAxes[2] = orthogonalAxes[2].normalize();
-
     this->calculateRadius();
 }
 
-void OrientedBoundingBox::rotate( Vector3f axis, float degrees )
+void OrientedBoundingBox::rotate( const Vector3f & axis, float degrees )
 {
-    axis = axis.normalize();
-    float radians = degrees * PI_OVER_180;
-    float s = sin( radians );
-    float c = cos( radians );
-
-    mOrthogonalAxes[0] = mOrthogonalAxes[0] * c + axis * axis.dot( mOrthogonalAxes[0] ) * ( 1 - c ) + mOrthogonalAxes[0].cross( axis ) * s;
-    mOrthogonalAxes[1] = mOrthogonalAxes[1] * c + axis * axis.dot( mOrthogonalAxes[1] ) * ( 1 - c ) + mOrthogonalAxes[1].cross( axis ) * s;
-    mOrthogonalAxes[2] = mOrthogonalAxes[2] * c + axis * axis.dot( mOrthogonalAxes[2] ) * ( 1 - c ) + mOrthogonalAxes[2].cross( axis ) * s;
+	degrees *= -1.0f;
+	Quaternion deltaRotation( axis, degrees );
+	mOrientation = mOrientation * deltaRotation;
 }
 
 bool OrientedBoundingBox::isPointInside( const Vector3f & point ) const
@@ -44,11 +33,14 @@ bool OrientedBoundingBox::isPointInside( const Vector3f & point ) const
     // Transform the point so that the center of this box is the origin
     Vector3f transformedPoint = point - mCenter;
 
+	Vector3f orthogonalAxes[3];
+	OrientedBoundingBox::calculateOrthogonalAxes( orthogonalAxes, mOrientation );
+	
     // Check if the scalar projection of the point along each axis is
     // within the bounds of the box
-    if( fabs( mOrthogonalAxes[0].dot( transformedPoint ) ) <= mEdgeHalfLengths[0] &&
-        fabs( mOrthogonalAxes[1].dot( transformedPoint ) ) <= mEdgeHalfLengths[1] &&
-        fabs( mOrthogonalAxes[2].dot( transformedPoint ) ) <= mEdgeHalfLengths[2] )
+    if( fabs( orthogonalAxes[0].dot( transformedPoint ) ) <= mEdgeHalfLengths[0] &&
+        fabs( orthogonalAxes[1].dot( transformedPoint ) ) <= mEdgeHalfLengths[1] &&
+        fabs( orthogonalAxes[2].dot( transformedPoint ) ) <= mEdgeHalfLengths[2] )
     {
         return true;
     }
@@ -73,28 +65,33 @@ bool OrientedBoundingBox::collisionWith( const OrientedBoundingBox & otherBox ) 
 
     Vector3f thisCorners[8];
     Vector3f otherCorners[8];
+    Vector3f thisOrthogonalAxes[3];
+    Vector3f otherOrthogonalAxes[3];
 
-    this->calculateCornerPoints( thisCorners );
-    otherBox.calculateCornerPoints( otherCorners );
+    OrientedBoundingBox::calculateCornerPoints( thisCorners, mCenter, mEdgeHalfLengths, mOrientation );
+    OrientedBoundingBox::calculateCornerPoints( otherCorners, otherBox.mCenter, otherBox.mEdgeHalfLengths, otherBox.mOrientation );
+
+    OrientedBoundingBox::calculateOrthogonalAxes( thisOrthogonalAxes, mOrientation );
+    OrientedBoundingBox::calculateOrthogonalAxes( otherOrthogonalAxes, otherBox.mOrientation );
 
     // These corner points should be precalculated already
     // Each face is determined by it's normal & a point in it, since it's basically a plane
-    Vector3f thisFaces[6][2] = { { -mOrthogonalAxes[0], thisCorners[0] },
-                                 { -mOrthogonalAxes[1], thisCorners[0] },
-                                 { -mOrthogonalAxes[2], thisCorners[0] },
-                                 {  mOrthogonalAxes[0], thisCorners[7] },
-                                 {  mOrthogonalAxes[1], thisCorners[7] },
-                                 {  mOrthogonalAxes[2], thisCorners[7] } };
-    Vector3f otherFaces[6][2] = { { -otherBox.mOrthogonalAxes[0], otherCorners[0] },
-                                  { -otherBox.mOrthogonalAxes[1], otherCorners[0] },
-                                  { -otherBox.mOrthogonalAxes[2], otherCorners[0] },
-                                  {  otherBox.mOrthogonalAxes[0], otherCorners[7] },
-                                  {  otherBox.mOrthogonalAxes[1], otherCorners[7] },
-                                  {  otherBox.mOrthogonalAxes[2], otherCorners[7] } };
+    Vector3f thisFaces[6][2] = { { -thisOrthogonalAxes[0], thisCorners[0] },
+                                 { -thisOrthogonalAxes[1], thisCorners[0] },
+                                 { -thisOrthogonalAxes[2], thisCorners[0] },
+                                 {  thisOrthogonalAxes[0], thisCorners[7] },
+                                 {  thisOrthogonalAxes[1], thisCorners[7] },
+                                 {  thisOrthogonalAxes[2], thisCorners[7] } };
+    Vector3f otherFaces[6][2] = { { -otherOrthogonalAxes[0], otherCorners[0] },
+                                  { -otherOrthogonalAxes[1], otherCorners[0] },
+                                  { -otherOrthogonalAxes[2], otherCorners[0] },
+                                  {  otherOrthogonalAxes[0], otherCorners[7] },
+                                  {  otherOrthogonalAxes[1], otherCorners[7] },
+                                  {  otherOrthogonalAxes[2], otherCorners[7] } };
 
     // The method of separating axes for obb collision detection works like this:
     // 1) The corners of box A are checked against each side of box B.
-    // 2) The check consists on determining on which side (positive/negative) a corner
+    // 2) The check consists on detevoid calculateOrthogonalAxes( Vector3f axes[] ) constrmining on which side (positive/negative) a corner
     // of box A is in regard to a side of box B.
     // 3) To determine this, corner coordinates of A are projected on the outward-pointing
     // normals of the sides on B.
@@ -159,48 +156,51 @@ bool OrientedBoundingBox::collisionWith( const OrientedBoundingBox & otherBox ) 
 void OrientedBoundingBox::draw( const Vector3f & color ) const
 {
     Vector3f corners[8];
-    calculateCornerPoints( corners );
+    OrientedBoundingBox::calculateCornerPoints( corners, mCenter, mEdgeHalfLengths, mOrientation );
+    
+    Vector3f orthogonalAxes[3];
+    OrientedBoundingBox::calculateOrthogonalAxes( orthogonalAxes, mOrientation );
 
     // These corner points are already in global reference, so we don't need to transform them
 	glBegin( GL_QUADS );
         glColor3f( color[0], color[1], color[2] );
 		// Front
-        glNormal3f( mOrthogonalAxes[0][0], mOrthogonalAxes[0][1], mOrthogonalAxes[0][2] );
+        glNormal3f( orthogonalAxes[0][0], orthogonalAxes[0][1], orthogonalAxes[0][2] );
 		glVertex3f( corners[1][0], corners[1][1], corners[1][2] );
 		glVertex3f( corners[6][0], corners[6][1], corners[6][2] );
         glVertex3f( corners[7][0], corners[7][1], corners[7][2] );
         glVertex3f( corners[2][0], corners[2][1], corners[2][2] );
 
 		// Right
-        glNormal3f( mOrthogonalAxes[1][0], mOrthogonalAxes[1][1], mOrthogonalAxes[1][2] );
+        glNormal3f( orthogonalAxes[1][0], orthogonalAxes[1][1], orthogonalAxes[1][2] );
 		glVertex3f( corners[2][0], corners[2][1], corners[2][2] );
 		glVertex3f( corners[7][0], corners[7][1], corners[7][2] );
         glVertex3f( corners[4][0], corners[4][1], corners[4][2] );
         glVertex3f( corners[3][0], corners[3][1], corners[3][2] );
 
 		// Back
-        glNormal3f( -mOrthogonalAxes[0][0], -mOrthogonalAxes[0][1], -mOrthogonalAxes[0][2] );
+        glNormal3f( -orthogonalAxes[0][0], -orthogonalAxes[0][1], -orthogonalAxes[0][2] );
 		glVertex3f( corners[3][0], corners[3][1], corners[3][2] );
 		glVertex3f( corners[4][0], corners[4][1], corners[4][2] );
         glVertex3f( corners[5][0], corners[5][1], corners[5][2] );
         glVertex3f( corners[0][0], corners[0][1], corners[0][2] );
 
 		// Left
-        glNormal3f( -mOrthogonalAxes[1][0], mOrthogonalAxes[1][1], mOrthogonalAxes[1][2] );
+        glNormal3f( -orthogonalAxes[1][0], orthogonalAxes[1][1], orthogonalAxes[1][2] );
 		glVertex3f( corners[0][0], corners[0][1], corners[0][2] );
 		glVertex3f( corners[5][0], corners[5][1], corners[5][2] );
         glVertex3f( corners[6][0], corners[6][1], corners[6][2] );
         glVertex3f( corners[1][0], corners[1][1], corners[1][2] );
 
 		// Top
-        glNormal3f( mOrthogonalAxes[2][0], mOrthogonalAxes[2][1], mOrthogonalAxes[2][2] );
+        glNormal3f( orthogonalAxes[2][0], orthogonalAxes[2][1], orthogonalAxes[2][2] );
 		glVertex3f( corners[6][0], corners[6][1], corners[6][2] );
 		glVertex3f( corners[5][0], corners[5][1], corners[5][2] );
         glVertex3f( corners[4][0], corners[4][1], corners[4][2] );
         glVertex3f( corners[7][0], corners[7][1], corners[7][2] );
 
 		// Bottom
-        glNormal3f( -mOrthogonalAxes[2][0], -mOrthogonalAxes[2][1], -mOrthogonalAxes[2][2] );
+        glNormal3f( -orthogonalAxes[2][0], -orthogonalAxes[2][1], -orthogonalAxes[2][2] );
 		glVertex3f( corners[1][0], corners[1][1], corners[1][2] );
 		glVertex3f( corners[2][0], corners[2][1], corners[2][2] );
         glVertex3f( corners[3][0], corners[3][1], corners[3][2] );
@@ -208,42 +208,43 @@ void OrientedBoundingBox::draw( const Vector3f & color ) const
 	glEnd();
 }
 
-// Calculate the corner points of the box; used for collision detection and drawing
-void OrientedBoundingBox::calculateCornerPoints( Vector3f corners[] ) const
+// Calculate the corner points of the box; used for collision detection and drawing,
+// return by reference in corners array
+void OrientedBoundingBox::calculateCornerPoints( Vector3f corners[], const Vector3f & center, const Vector3f & edgeHalfLengths, const Quaternion & orientation )
 {
-    corners[0] = mCenter - mOrthogonalAxes[0] * mEdgeHalfLengths[0]
-                         - mOrthogonalAxes[1] * mEdgeHalfLengths[1]
-                         - mOrthogonalAxes[2] * mEdgeHalfLengths[2];
-    corners[1] = mCenter + mOrthogonalAxes[0] * mEdgeHalfLengths[0]
-                         - mOrthogonalAxes[1] * mEdgeHalfLengths[1]
-                         - mOrthogonalAxes[2] * mEdgeHalfLengths[2];
-    corners[2] = mCenter + mOrthogonalAxes[0] * mEdgeHalfLengths[0]
-                         + mOrthogonalAxes[1] * mEdgeHalfLengths[1]
-                         - mOrthogonalAxes[2] * mEdgeHalfLengths[2];
-    corners[3] = mCenter - mOrthogonalAxes[0] * mEdgeHalfLengths[0]
-                         + mOrthogonalAxes[1] * mEdgeHalfLengths[1]
-                         - mOrthogonalAxes[2] * mEdgeHalfLengths[2];
-    corners[4] = mCenter - mOrthogonalAxes[0] * mEdgeHalfLengths[0]
-                         + mOrthogonalAxes[1] * mEdgeHalfLengths[1]
-                         + mOrthogonalAxes[2] * mEdgeHalfLengths[2];
-    corners[5] = mCenter - mOrthogonalAxes[0] * mEdgeHalfLengths[0]
-                         - mOrthogonalAxes[1] * mEdgeHalfLengths[1]
-                         + mOrthogonalAxes[2] * mEdgeHalfLengths[2];
-    corners[6] = mCenter + mOrthogonalAxes[0] * mEdgeHalfLengths[0]
-                         - mOrthogonalAxes[1] * mEdgeHalfLengths[1]
-                         + mOrthogonalAxes[2] * mEdgeHalfLengths[2];
-    corners[7] = mCenter + mOrthogonalAxes[0] * mEdgeHalfLengths[0]
-                         + mOrthogonalAxes[1] * mEdgeHalfLengths[1]
-                         + mOrthogonalAxes[2] * mEdgeHalfLengths[2];
+	Vector3f orthogonalAxes[3];
+	OrientedBoundingBox::calculateOrthogonalAxes( orthogonalAxes, orientation );
+
+    corners[0] = center - orthogonalAxes[0] * edgeHalfLengths[0]
+                        - orthogonalAxes[1] * edgeHalfLengths[1]
+                        - orthogonalAxes[2] * edgeHalfLengths[2];
+    corners[1] = center + orthogonalAxes[0] * edgeHalfLengths[0]
+                        - orthogonalAxes[1] * edgeHalfLengths[1]
+                        - orthogonalAxes[2] * edgeHalfLengths[2];
+    corners[2] = center + orthogonalAxes[0] * edgeHalfLengths[0]
+                        + orthogonalAxes[1] * edgeHalfLengths[1]
+                        - orthogonalAxes[2] * edgeHalfLengths[2];
+    corners[3] = center - orthogonalAxes[0] * edgeHalfLengths[0]
+                        + orthogonalAxes[1] * edgeHalfLengths[1]
+                        - orthogonalAxes[2] * edgeHalfLengths[2];
+    corners[4] = center - orthogonalAxes[0] * edgeHalfLengths[0]
+                        + orthogonalAxes[1] * edgeHalfLengths[1]
+                        + orthogonalAxes[2] * edgeHalfLengths[2];
+    corners[5] = center - orthogonalAxes[0] * edgeHalfLengths[0]
+                        - orthogonalAxes[1] * edgeHalfLengths[1]
+                        + orthogonalAxes[2] * edgeHalfLengths[2];
+    corners[6] = center + orthogonalAxes[0] * edgeHalfLengths[0]
+                        - orthogonalAxes[1] * edgeHalfLengths[1]
+                        + orthogonalAxes[2] * edgeHalfLengths[2];
+    corners[7] = center + orthogonalAxes[0] * edgeHalfLengths[0]
+                        + orthogonalAxes[1] * edgeHalfLengths[1]
+                        + orthogonalAxes[2] * edgeHalfLengths[2];
 }
 
-void OrientedBoundingBox::printCornerPoints( std::ostream & os ) const
+void OrientedBoundingBox::calculateOrthogonalAxes( Vector3f axes[], const Quaternion & orientation )
 {
-    Vector3f cornerPoints[8];
-    this->calculateCornerPoints( cornerPoints );
-
-    for( int i = 0; i < 8; i++ )
-    {
-        os << cornerPoints[i] << std::endl;
-    }
+	axes[0] = orientation * Vector3f( 1.0f, 0.0f, 0.0f );
+	axes[1] = orientation * Vector3f( 0.0f, 1.0f, 0.0f );
+	axes[2] = orientation * Vector3f( 0.0f, 0.0f, 1.0f );
 }
+

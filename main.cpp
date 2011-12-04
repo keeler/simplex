@@ -34,7 +34,7 @@ void generateBoxes()
 
     Vector3f center;
     Vector3f edgeHalfLengths;
-    Vector3f orientation[3];
+    Quaternion defaultOrientation;
 
     srand( time( NULL ) );
     for( int i = 0; i < NUM_BOXES; i++ )
@@ -44,11 +44,7 @@ void generateBoxes()
                            (rand()%2?-1.0f:1.0f)*(rand()%(NUM_BOXES/20))/1.0 );
         edgeHalfLengths = Vector3f( 0.5f, 1.0f, 2.0f );
 
-        orientation[0] = Vector3f( 1.0f, 0.0f, 0.0f );
-        orientation[1] = Vector3f( 0.0f, 1.0f, 0.0f );
-        orientation[2] = Vector3f( 0.0f, 0.0f, 1.0f );
-
-        _myBoxes[i] = OrientedBoundingBox( center, edgeHalfLengths, orientation );
+        _myBoxes[i] = OrientedBoundingBox( center, edgeHalfLengths, defaultOrientation );
     }
 }
 
@@ -65,7 +61,7 @@ void generateRotationVectors()
 
     for( int i = 0; i < NUM_BOXES; i++ )
     {
-        _rotationRates[i] = (rand()%5+3)/1.0;
+        _rotationRates[i] = (rand()%7+3)/1.0;
     }
 }
 
@@ -204,15 +200,15 @@ void drawScene()
 
     for( map<OrientedBoundingBox *, bool>::iterator it = hit.begin();
          it != hit.end();
-         it++ )
+         ++it )
     {
-        if( (*it).second )
+        if( it->second )
         {
-            (*it).first->draw( Vector3f( 1.0f, 0.0f, 0.0f ) );
+            it->first->draw( Vector3f( 1.0f, 0.0f, 0.0f ) );
         }
         else
         {
-            (*it).first->draw( Vector3f( 0.0f, 1.0f, 1.0f ) );
+            it->first->draw( Vector3f( 0.0f, 1.0f, 1.0f ) );
         }
     }
 

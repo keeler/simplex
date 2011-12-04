@@ -8,7 +8,7 @@ class Camera
 {
 	public:
 		Camera();
-		Camera( const Vector3f & position, float yawDegrees, float pitchDegreeszz );
+		Camera( const Vector3f & position, float yawDegrees, float pitchDegrees );
 		~Camera();
 
 		void setPosition( const Vector3f & position ) { mPosition = position; };
@@ -30,8 +30,8 @@ class Camera
 		void look() const;
 		
 	private:
-		Vector3f mPosition;
-		Quaternion mRotation;
+		Vector3f   mPosition;
+		Quaternion mOrientation;
 };
 
 #endif
