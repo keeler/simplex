@@ -51,16 +51,11 @@ void generateBoxes()
 void generateRotationVectors()
 {
     _rotationVectors = new Vector3f[NUM_BOXES];
-
-    for( int i = 0; i < NUM_BOXES; i++ )
-    {
-        _rotationVectors[i] = Vector3f( (rand()%2?-1.0f:1.0f)*(rand()%5)/1.0, (rand()%2?-1.0f:1.0f)*(rand()%5)/1.0, 0.0f );
-    }
-
     _rotationRates = new float[NUM_BOXES];
 
     for( int i = 0; i < NUM_BOXES; i++ )
     {
+        _rotationVectors[i] = Vector3f( (rand()%2?-1.0f:1.0f)*(rand()%5)/1.0, (rand()%2?-1.0f:1.0f)*(rand()%5)/1.0, 0.0f );
         _rotationRates[i] = (rand()%7+3)/1.0;
     }
 }
@@ -180,12 +175,6 @@ void drawScene()
 
  //   _myOctree->drawOctreeFrame( Vector3f( 1.0f, 1.0f, 1.0f ) );
 
-    map<OrientedBoundingBox *, bool> hit;
-    for( int i = 0; i < NUM_BOXES; i++ )
-    {
-        hit[ &_myBoxes[i] ] = false;
-    }
-
     vector<BoxPair> collisionPairs;
     _myOctree->getPotentialCollisionPairs( collisionPairs );
  //   cout << "Potential collisions " << collisionPairs.size() << endl;
@@ -193,23 +182,29 @@ void drawScene()
     {
         if( collisionPairs[i].box1->collisionWith( *collisionPairs[i].box2 ) )
         {
-            hit[ collisionPairs[i].box1 ] = true;
-            hit[ collisionPairs[i].box2 ] = true;
+            collisionPairs[i].box1->setCollisionState( true );
+            collisionPairs[i].box2->setCollisionState( true );
         }
     }
 
-    for( map<OrientedBoundingBox *, bool>::iterator it = hit.begin();
-         it != hit.end();
-         ++it )
+	// Draw all the boxes
+    for( int i = 0; i < NUM_BOXES; i++ )
     {
-        if( it->second )
-        {
-            it->first->draw( Vector3f( 1.0f, 0.0f, 0.0f ) );
+    	if( _myBoxes[i].getCollisionState() == true )
+    	{
+    		_myBoxes[i].draw( Vector3f( 1.0f, 0.0f, 0.0f ) );
         }
         else
         {
-            it->first->draw( Vector3f( 0.0f, 1.0f, 1.0f ) );
+            _myBoxes[i].draw( Vector3f( 0.0f, 1.0f, 1.0f ) );
         }
+    }
+
+	// Reset the collided ones collision state to false
+    for( unsigned int i = 0; i < collisionPairs.size(); i++ )
+    {
+        collisionPairs[i].box1->setCollisionState( false );
+        collisionPairs[i].box2->setCollisionState( false );
     }
 
     glutSwapBuffers();

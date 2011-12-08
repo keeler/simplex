@@ -27,49 +27,38 @@ Camera::~Camera()
 // for OpenGL faces negative z
 void Camera::moveForward( float amount )
 {
-	Vector3f defaultForward( 0.0f, 0.0f, -1.0f );
-	Vector3f currentForward = mOrientation * defaultForward;
-
+	// Rotate the default forward vector
+	Vector3f currentForward = mOrientation * Vector3f( 0.0f, 0.0f, -1.0f );
 	mPosition += currentForward * amount;
 }
 
 void Camera::moveBackward( float amount )
 {
-	Vector3f defaultBackward( 0.0f, 0.0f, 1.0f );
-	Vector3f currentBackward = mOrientation * defaultBackward;
-
+	Vector3f currentBackward = mOrientation * Vector3f( 0.0f, 0.0f, 1.0f );
 	mPosition += currentBackward * amount;
 }
 
 void Camera::moveRight( float amount )
 {
-	Vector3f defaultRight( 1.0f, 0.0f, 0.0f );
-	Vector3f currentRight = mOrientation * defaultRight;
-
+	Vector3f currentRight = mOrientation * Vector3f( 1.0f, 0.0f, 0.0f );
 	mPosition += currentRight * amount;
 }
 
 void Camera::moveLeft( float amount )
 {
-	Vector3f defaultLeft( -1.0f, 0.0f, 0.0f );
-	Vector3f currentLeft = mOrientation * defaultLeft;
-
+	Vector3f currentLeft = mOrientation * Vector3f( -1.0f, 0.0f, 0.0f );
 	mPosition += currentLeft * amount;
 }
 
 void Camera::moveUp( float amount )
 {
-	Vector3f defaultUp( 0.0f, 1.0f, 0.0f );
-	Vector3f currentUp = mOrientation * defaultUp;
-
+	Vector3f currentUp = mOrientation * Vector3f( 0.0f, 1.0f, 0.0f );
 	mPosition += currentUp * amount;
 }
 
 void Camera::moveDown( float amount )
 {
-	Vector3f defaultDown( 0.0f, -1.0f, 0.0f );
-	Vector3f currentDown = mOrientation * defaultDown;
-
+	Vector3f currentDown = mOrientation * Vector3f( 0.0f, -1.0f, 0.0f );
 	mPosition += currentDown * amount;
 }
 

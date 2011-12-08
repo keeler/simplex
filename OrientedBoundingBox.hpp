@@ -49,6 +49,9 @@ class OrientedBoundingBox
 		// Max distance to a corner to center
         float getRadius() const { return mRadius; };
 
+		bool getCollisionState() const { return mHasCollided; };
+		void setCollisionState( bool newState ) { mHasCollided = newState; };
+
         void rotate( const Vector3f & axis, float degrees );
 
         bool isPointInside( const Vector3f & point ) const;
@@ -56,18 +59,21 @@ class OrientedBoundingBox
 
         void move( const Vector3f & velocity ) { mCenter += velocity; };
         void draw( const Vector3f & color ) const;
-
-    private:
+        
         // Needed for collisionWith( OBB ) and drawing
         static void calculateCornerPoints( Vector3f corners[], const Vector3f & center, const Vector3f & edgeHalfLengths, const Quaternion & orientation );
         // Used for collision detection
         static void calculateOrthogonalAxes( Vector3f axes[], const Quaternion & orientation );
+
+    private:
         // radius = sqrt( a^2 + b^2 + c^2 ), need to multiply the halfEdgeLengths by 2 to get a, b, and c
         void calculateRadius() { mRadius = ( mEdgeHalfLengths * 2 ).magnitude() / 2; };
 
         Vector3f   mCenter;
         Vector3f   mEdgeHalfLengths;
         Quaternion mOrientation;
+        
+        bool mHasCollided;
 
         float mRadius;    // Maximum distance to a corner
 };

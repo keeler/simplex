@@ -8,7 +8,8 @@
 OrientedBoundingBox::OrientedBoundingBox() :
     mCenter( Vector3f( 0.0f, 0.0f, 0.0f ) ),
     mEdgeHalfLengths( Vector3f( 1.0f, 1.0f, 1.0f ) ),
-    mOrientation( Quaternion() )
+    mOrientation( Quaternion() ),
+    mHasCollided( false )
 {
     this->calculateRadius();
 }
@@ -16,7 +17,8 @@ OrientedBoundingBox::OrientedBoundingBox() :
 OrientedBoundingBox::OrientedBoundingBox( const Vector3f & center, const Vector3f & edgeHalfLengths, const Quaternion & orientation ) :
     mCenter( center ),
     mEdgeHalfLengths( edgeHalfLengths ),
-    mOrientation( orientation )
+    mOrientation( orientation ),
+    mHasCollided( false )
 {
     this->calculateRadius();
 }
