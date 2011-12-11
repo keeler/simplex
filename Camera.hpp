@@ -3,6 +3,7 @@
 
 #include "Vector3f.hpp"
 #include "Quaternion.hpp"
+#include "Frustum.hpp"
 
 class Camera
 {
@@ -12,6 +13,8 @@ class Camera
 		~Camera();
 
 		void setPosition( const Vector3f & position ) { mPosition = position; };
+
+		Frustum getFrustum() const { return mFrustum; };
 
 		void moveForward( float amount );
 		void moveBackward( float amount );
@@ -28,10 +31,12 @@ class Camera
 		// Actually does the world translation/rotation; move*() and rotate*() only
 		// set the private member variables
 		void look() const;
+		void perspective( float fovy, float aspectRatio, float nearClip, float farClip );
 		
 	private:
 		Vector3f   mPosition;
 		Quaternion mOrientation;
+		Frustum    mFrustum;
 };
 
 #endif

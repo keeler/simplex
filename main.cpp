@@ -6,12 +6,11 @@
 #include <cmath>
 #include <stdlib.h>
 #include <cstdlib>
-#include <map>
 #include "GL/glut.h"
 using namespace std;
 
 // Should be anything more than 20, see lines 29-31, NUM_BOXES/20
-const int NUM_BOXES = 3000;
+const int NUM_BOXES = 7000;
 
 bool keyState[256] = { false };
 
@@ -136,7 +135,7 @@ void initRendering()
     glCullFace( GL_BACK );
 
     glEnable( GL_LIGHTING );    // Allows us to use light
-    glEnable( GL_LIGHT0 );
+	glEnable( GL_LIGHT0 );
   //  glEnable( GL_NORMALIZE );
 
     glShadeModel( GL_SMOOTH );
@@ -153,7 +152,7 @@ void handleResize( int width, int height )
     glMatrixMode( GL_PROJECTION );
     // Set the camera perspective
     glLoadIdentity();    // Reset the camera
-    gluPerspective( 45.0, (double)width / (double)height, 1.0, 1000.0 );
+    _myCamera->perspective( 45.0, (double)width / (double)height, 100.0, 800.0 );
 }
 
 void drawScene()
@@ -163,9 +162,10 @@ void drawScene()
     glLoadIdentity();
 
 	handleKeyPress();
-	_myCamera->look();
+	//_myCamera->look();
 
-	glTranslatef( 0.0f, 0.0f, -30.0f );
+	glTranslatef( 0.0f, 0.0f, -600.0f );
+	glRotatef( _angle, 0.0f, 1.0f, 0.0f );
     glColor3f( 1.0f, 1.0f, 1.0f );
 	// Add positioned light 0
 	GLfloat lightColor0[] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -173,7 +173,9 @@ void drawScene()
 	glLightfv( GL_LIGHT0, GL_DIFFUSE, lightColor0 );
 	glLightfv( GL_LIGHT0, GL_POSITION, lightPos0 );
 
- //   _myOctree->drawOctreeFrame( Vector3f( 1.0f, 1.0f, 1.0f ) );
+ //   _myOctree->draw( Vector3f( 1.0f, 1.0f, 1.0f ) );
+	Frustum cameraFrustum = _myCamera->getFrustum();
+	cameraFrustum.draw( Vector3f( 1.0f, 1.0f, 1.0f ) );
 
     vector<BoxPair> collisionPairs;
     _myOctree->getPotentialCollisionPairs( collisionPairs );
@@ -187,16 +189,20 @@ void drawScene()
         }
     }
 
-	// Draw all the boxes
+	// Draw the boxes in the frustum
     for( int i = 0; i < NUM_BOXES; i++ )
     {
-    	if( _myBoxes[i].getCollisionState() == true )
+    	if( !cameraFrustum.isSphereInFrustum( _myBoxes[i].getCenter(), _myBoxes[i].getRadius() ) )
+    	{
+    		continue;
+    	}
+    	else if( _myBoxes[i].getCollisionState() == true )
     	{
     		_myBoxes[i].draw( Vector3f( 1.0f, 0.0f, 0.0f ) );
         }
         else
         {
-            _myBoxes[i].draw( Vector3f( 0.0f, 1.0f, 1.0f ) );
+			_myBoxes[i].draw( Vector3f( 1.0f, 0.0f, 1.0f ) );
         }
     }
 
@@ -242,7 +248,7 @@ int main( int argc, char **argv )
     }
 
 	_myCamera = new Camera( Vector3f( 0.0f, 0.0f, 0.0f ), 0.0f, 0.0f );
-	_myCamera->setPosition( Vector3f( 0.0f, 0.0f, -100.0f ) );
+	_myCamera->setPosition( Vector3f( 0.0f, 0.0f, 0.0f ) );
 
     glutInit( &argc, argv );
     glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );

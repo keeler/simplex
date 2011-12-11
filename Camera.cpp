@@ -30,36 +30,42 @@ void Camera::moveForward( float amount )
 	// Rotate the default forward vector
 	Vector3f currentForward = mOrientation * Vector3f( 0.0f, 0.0f, -1.0f );
 	mPosition += currentForward * amount;
+	mFrustum.setPosition( mPosition );
 }
 
 void Camera::moveBackward( float amount )
 {
 	Vector3f currentBackward = mOrientation * Vector3f( 0.0f, 0.0f, 1.0f );
 	mPosition += currentBackward * amount;
+	mFrustum.setPosition( mPosition );
 }
 
 void Camera::moveRight( float amount )
 {
 	Vector3f currentRight = mOrientation * Vector3f( 1.0f, 0.0f, 0.0f );
 	mPosition += currentRight * amount;
+	mFrustum.setPosition( mPosition );
 }
 
 void Camera::moveLeft( float amount )
 {
 	Vector3f currentLeft = mOrientation * Vector3f( -1.0f, 0.0f, 0.0f );
 	mPosition += currentLeft * amount;
+	mFrustum.setPosition( mPosition );
 }
 
 void Camera::moveUp( float amount )
 {
 	Vector3f currentUp = mOrientation * Vector3f( 0.0f, 1.0f, 0.0f );
 	mPosition += currentUp * amount;
+	mFrustum.setPosition( mPosition );
 }
 
 void Camera::moveDown( float amount )
 {
 	Vector3f currentDown = mOrientation * Vector3f( 0.0f, -1.0f, 0.0f );
 	mPosition += currentDown * amount;
+	mFrustum.setPosition( mPosition );
 }
 
 void Camera::rotateYaw( float yawDegrees )
@@ -69,6 +75,7 @@ void Camera::rotateYaw( float yawDegrees )
 	yawDegrees *= -1.0f;
 	Quaternion yawRotation( Vector3f( 0.0f, 1.0f, 0.0f ), yawDegrees );
 	mOrientation = mOrientation * yawRotation;
+	mFrustum.setOrientation( mOrientation );
 }
 
 void Camera::rotatePitch( float pitchDegrees )
@@ -78,6 +85,7 @@ void Camera::rotatePitch( float pitchDegrees )
 	pitchDegrees *= -1.0f;
 	Quaternion pitchRotation( Vector3f( 1.0f, 0.0f, 0.0f ), pitchDegrees );
 	mOrientation = mOrientation * pitchRotation;
+	mFrustum.setOrientation( mOrientation );
 }
 
 // Actually does the world translation/rotation; the above only set them
@@ -89,5 +97,11 @@ void Camera::look() const
 
 	glRotatef( -angle, axis[0], axis[1], axis[2] );
 	glTranslatef( -mPosition[0], -mPosition[1], -mPosition[2] );
+}
+
+void Camera::perspective( float fovy, float aspectRatio, float nearClip, float farClip )
+{
+	gluPerspective( fovy, aspectRatio, nearClip, farClip );
+	mFrustum = Frustum( fovy, aspectRatio, nearClip, farClip, -mPosition, mOrientation.getConjugate() );
 }
 
