@@ -1,5 +1,7 @@
 #include "Octree.hpp"
 #include "GL/glut.h"
+#include <iostream>
+using namespace std;
 
 Octree::Octree( const Vector3f & minCorner, const Vector3f & maxCorner )
 {
@@ -16,6 +18,15 @@ void Octree::initializeNode( OctreeNode * const node, const Vector3f & minCorner
     node->center = Vector3f( ( minCorner[0] + maxCorner[0] ) / 2,
                              ( minCorner[1] + maxCorner[1] ) / 2,
                              ( minCorner[2] + maxCorner[2] ) / 2 );
+
+	node->corners[0] = Vector3f( minCorner[0], minCorner[1], minCorner[2] );
+	node->corners[1] = Vector3f( minCorner[0], minCorner[1], maxCorner[2] );
+	node->corners[2] = Vector3f( minCorner[0], maxCorner[1], minCorner[2] );
+	node->corners[3] = Vector3f( minCorner[0], maxCorner[1], maxCorner[2] );
+	node->corners[4] = Vector3f( maxCorner[0], minCorner[1], minCorner[2] );
+	node->corners[5] = Vector3f( maxCorner[0], minCorner[1], maxCorner[2] );
+	node->corners[6] = Vector3f( maxCorner[0], maxCorner[1], minCorner[2] );
+	node->corners[7] = Vector3f( maxCorner[0], maxCorner[1], maxCorner[2] );
 
     node->hasChildren = false;
     node->numBoxes = 0;
@@ -218,7 +229,7 @@ void Octree::removeBox( OrientedBoundingBox * const box, OctreeNode * const node
     }
 }
 
-void Octree::collectBoxesFromChildren( OctreeNode * const node, std::set<OrientedBoundingBox *> & collectedBoxes )
+void Octree::collectBoxesFromChildren( const OctreeNode * const node, std::set<OrientedBoundingBox *> & collectedBoxes )
 {
     // Recurse on children
     if( node->hasChildren )
@@ -319,106 +330,180 @@ void Octree::getPotentialCollisionPairs( OctreeNode * const node, std::vector<Bo
     }
 }
 
+int Octree::getIndexToCornerDirection( const Vector3f & normal )
+{
+	int index = 0;
+
+	if( normal[2] >= -0.0 )
+	{
+		index |= 1;
+	}
+	if( normal[1] >= -0.0 )
+	{
+		index |= 2;
+	}
+	if( normal[0] >= -0.0 )
+	{
+		index |= 4;
+	}
+
+	return index;
+}
+
+void Octree::getBoxesWithinFrustum( OctreeNode * const node, const Frustum & frustum, std::set<OrientedBoundingBox *> & visibleBoxes )
+{
+	int status = -1;                // Assume inside; -1 = inside, 0 = outside; 1 = intersect
+
+	const Vector3f * frustumCorners = frustum.getCorners();
+	const Vector3f * frustumNormals = frustum.getNormals();
+
+	Vector3f frustumPlanes[6][2] = { { frustumNormals[Frustum::NEAR],   frustumCorners[Frustum::NTR] },		// Near
+									 { frustumNormals[Frustum::TOP],    frustumCorners[Frustum::NTR] },		// Top
+									 { frustumNormals[Frustum::RIGHT],  frustumCorners[Frustum::NTR] },		// Right
+									 { frustumNormals[Frustum::FAR],    frustumCorners[Frustum::FBL] },		// Far
+									 { frustumNormals[Frustum::BOTTOM], frustumCorners[Frustum::FBL] },		// Bottom
+									 { frustumNormals[Frustum::LEFT],   frustumCorners[Frustum::FBL] } };	// Left
+
+	bool intersectFlag = false;
+	for( int i = 0; i < 6; i++ )
+	{
+		Vector3f currentNormal = frustumPlanes[i][0];
+		Vector3f currentPlanePoint = frustumPlanes[i][1];
+		Vector3f closePoint = node->maxCorner;
+
+		if( currentNormal[0] >= 0 )
+		{
+			closePoint[0] = node->minCorner[0];
+		}
+		if( currentNormal[1] >= 0 )
+		{
+			closePoint[1] = node->minCorner[1];
+		}
+		if( currentNormal[2] >= 0 )
+		{
+			closePoint[2] = node->minCorner[2];
+		}
+
+		// If the closest point isn't inside the frustum, then the node must be outside the frustum
+		if( currentNormal.dot( closePoint - currentPlanePoint ) > 0 )
+		{
+			status = 0;
+			break;
+		}
+
+		Vector3f farPoint = node->minCorner;
+
+		if( currentNormal[0] >= 0 )
+		{
+			farPoint[0] = node->maxCorner[0];
+		}
+		if( currentNormal[1] >= 0 )
+		{
+			farPoint[1] = node->maxCorner[1];
+		}
+		if( currentNormal[2] >= 0 )
+		{
+			farPoint[2] = node->maxCorner[2];
+		}
+
+		if( currentNormal.dot( farPoint - currentPlanePoint ) > 0 )
+		{
+			intersectFlag = true;
+		}
+	}
+
+	// If status hasn't been changed to 'outside'
+	if( status != 0 && intersectFlag )
+	{
+		status = 1;
+	}
+
+	// If the node is completely outside
+	if( status == 0 )
+	{
+		return;
+	}
+	// If the node is completely inside
+	else if( status == -1 )
+	{
+		collectBoxesFromChildren( node, visibleBoxes );
+	}
+	else
+	{
+		if( node->hasChildren )
+		{
+			getBoxesWithinFrustum( node->children[0][0][0], frustum, visibleBoxes );
+			getBoxesWithinFrustum( node->children[0][0][1], frustum, visibleBoxes );
+			getBoxesWithinFrustum( node->children[0][1][0], frustum, visibleBoxes );
+			getBoxesWithinFrustum( node->children[0][1][1], frustum, visibleBoxes );
+			getBoxesWithinFrustum( node->children[1][0][0], frustum, visibleBoxes );
+			getBoxesWithinFrustum( node->children[1][0][1], frustum, visibleBoxes );
+			getBoxesWithinFrustum( node->children[1][1][0], frustum, visibleBoxes );
+			getBoxesWithinFrustum( node->children[1][1][1], frustum, visibleBoxes );
+		}
+		else
+		{
+			for( std::set<OrientedBoundingBox *>::iterator it = node->boxes.begin();
+				 it != node->boxes.end();
+				 ++it )
+			{
+				visibleBoxes.insert( *it );
+			}
+		}
+	}
+}
+
 void Octree::drawNodeAndChildren( OctreeNode * const node, const Vector3f & color )
 {
-    // Draw octree partitions as wireframe cubes
-    glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+	glColor3f( color[0], color[1], color[2] );
+    glBegin( GL_QUADS );
+        // Back
+        glVertex3f( node->minCorner[0], node->minCorner[1], node->minCorner[2] );
+        glVertex3f( node->maxCorner[0], node->minCorner[1], node->minCorner[2] );
+        glVertex3f( node->maxCorner[0], node->maxCorner[1], node->minCorner[2] );
+        glVertex3f( node->minCorner[0], node->maxCorner[1], node->minCorner[2] );
 
+        // Right
+        glVertex3f( node->minCorner[0], node->maxCorner[1], node->minCorner[2] );
+        glVertex3f( node->maxCorner[0], node->maxCorner[1], node->minCorner[2] );
+        glVertex3f( node->maxCorner[0], node->maxCorner[1], node->maxCorner[2] );
+        glVertex3f( node->minCorner[0], node->maxCorner[1], node->maxCorner[2] );
+
+        // Front
+        glVertex3f( node->minCorner[0], node->maxCorner[1], node->maxCorner[2] );
+        glVertex3f( node->maxCorner[0], node->maxCorner[1], node->maxCorner[2] );
+        glVertex3f( node->maxCorner[0], node->minCorner[1], node->maxCorner[2] );
+        glVertex3f( node->minCorner[0], node->minCorner[1], node->maxCorner[2] );
+
+        // Left
+        glVertex3f( node->minCorner[0], node->minCorner[1], node->minCorner[2] );
+        glVertex3f( node->maxCorner[0], node->minCorner[1], node->minCorner[2] );
+        glVertex3f( node->maxCorner[0], node->minCorner[1], node->maxCorner[2] );
+        glVertex3f( node->minCorner[0], node->minCorner[1], node->maxCorner[2] );
+
+        // Top
+        glVertex3f( node->maxCorner[0], node->minCorner[1], node->minCorner[2] );
+        glVertex3f( node->maxCorner[0], node->maxCorner[1], node->minCorner[2] );
+        glVertex3f( node->maxCorner[0], node->maxCorner[1], node->maxCorner[2] );
+        glVertex3f( node->maxCorner[0], node->minCorner[1], node->maxCorner[2] );
+
+        // Bottom
+        glVertex3f( node->minCorner[0], node->minCorner[1], node->minCorner[2] );
+        glVertex3f( node->minCorner[0], node->maxCorner[1], node->minCorner[2] );
+        glVertex3f( node->minCorner[0], node->maxCorner[1], node->maxCorner[2] );
+        glVertex3f( node->minCorner[0], node->minCorner[1], node->maxCorner[2] );
+    glEnd();
+        
     if( node->hasChildren )
     {
-        glColor3f( color[0], color[1], color[2] );
-        glBegin( GL_QUADS );
-            // Back
-            glVertex3f( node->minCorner[0], node->minCorner[1], node->minCorner[2] );
-            glVertex3f( node->maxCorner[0], node->minCorner[1], node->minCorner[2] );
-            glVertex3f( node->maxCorner[0], node->maxCorner[1], node->minCorner[2] );
-            glVertex3f( node->minCorner[0], node->maxCorner[1], node->minCorner[2] );
-
-            // Right
-            glVertex3f( node->minCorner[0], node->maxCorner[1], node->minCorner[2] );
-            glVertex3f( node->maxCorner[0], node->maxCorner[1], node->minCorner[2] );
-            glVertex3f( node->maxCorner[0], node->maxCorner[1], node->maxCorner[2] );
-            glVertex3f( node->minCorner[0], node->maxCorner[1], node->maxCorner[2] );
-
-            // Front
-            glVertex3f( node->minCorner[0], node->maxCorner[1], node->maxCorner[2] );
-            glVertex3f( node->maxCorner[0], node->maxCorner[1], node->maxCorner[2] );
-            glVertex3f( node->maxCorner[0], node->minCorner[1], node->maxCorner[2] );
-            glVertex3f( node->minCorner[0], node->minCorner[1], node->maxCorner[2] );
-
-            // Left
-            glVertex3f( node->minCorner[0], node->minCorner[1], node->minCorner[2] );
-            glVertex3f( node->maxCorner[0], node->minCorner[1], node->minCorner[2] );
-            glVertex3f( node->maxCorner[0], node->minCorner[1], node->maxCorner[2] );
-            glVertex3f( node->minCorner[0], node->minCorner[1], node->maxCorner[2] );
-
-            // Top
-            glVertex3f( node->maxCorner[0], node->minCorner[1], node->minCorner[2] );
-            glVertex3f( node->maxCorner[0], node->maxCorner[1], node->minCorner[2] );
-            glVertex3f( node->maxCorner[0], node->maxCorner[1], node->maxCorner[2] );
-            glVertex3f( node->maxCorner[0], node->minCorner[1], node->maxCorner[2] );
-
-            // Bottom
-            glVertex3f( node->minCorner[0], node->minCorner[1], node->minCorner[2] );
-            glVertex3f( node->minCorner[0], node->maxCorner[1], node->minCorner[2] );
-            glVertex3f( node->minCorner[0], node->maxCorner[1], node->maxCorner[2] );
-            glVertex3f( node->minCorner[0], node->minCorner[1], node->maxCorner[2] );
-        glEnd();
-
-        for( int x = 0; x < 2; x++ )
-        {
-            for( int y = 0; y < 2; y++ )
-            {
-                for( int z = 0; z < 2; z++ )
-                {
-                    drawNodeAndChildren( node->children[x][y][z], color );
-                }
-            }
-        }
+		drawNodeAndChildren( node->children[0][0][0], color );
+		drawNodeAndChildren( node->children[0][0][1], color );
+		drawNodeAndChildren( node->children[0][1][0], color );
+		drawNodeAndChildren( node->children[0][1][1], color );
+		drawNodeAndChildren( node->children[1][0][0], color );
+		drawNodeAndChildren( node->children[1][0][1], color );
+		drawNodeAndChildren( node->children[1][1][0], color );
+		drawNodeAndChildren( node->children[1][1][1], color );
     }
-    else
-    {
-        glColor3f( color[0], color[1], color[2] );
-        glBegin( GL_QUADS );
-            // Back
-            glVertex3f( node->minCorner[0], node->minCorner[1], node->minCorner[2] );
-            glVertex3f( node->maxCorner[0], node->minCorner[1], node->minCorner[2] );
-            glVertex3f( node->maxCorner[0], node->maxCorner[1], node->minCorner[2] );
-            glVertex3f( node->minCorner[0], node->maxCorner[1], node->minCorner[2] );
-
-            // Right
-            glVertex3f( node->minCorner[0], node->maxCorner[1], node->minCorner[2] );
-            glVertex3f( node->maxCorner[0], node->maxCorner[1], node->minCorner[2] );
-            glVertex3f( node->maxCorner[0], node->maxCorner[1], node->maxCorner[2] );
-            glVertex3f( node->minCorner[0], node->maxCorner[1], node->maxCorner[2] );
-
-            // Front
-            glVertex3f( node->minCorner[0], node->maxCorner[1], node->maxCorner[2] );
-            glVertex3f( node->maxCorner[0], node->maxCorner[1], node->maxCorner[2] );
-            glVertex3f( node->maxCorner[0], node->minCorner[1], node->maxCorner[2] );
-            glVertex3f( node->minCorner[0], node->minCorner[1], node->maxCorner[2] );
-
-            // Left
-            glVertex3f( node->minCorner[0], node->minCorner[1], node->minCorner[2] );
-            glVertex3f( node->maxCorner[0], node->minCorner[1], node->minCorner[2] );
-            glVertex3f( node->maxCorner[0], node->minCorner[1], node->maxCorner[2] );
-            glVertex3f( node->minCorner[0], node->minCorner[1], node->maxCorner[2] );
-
-            // Top
-            glVertex3f( node->maxCorner[0], node->minCorner[1], node->minCorner[2] );
-            glVertex3f( node->maxCorner[0], node->maxCorner[1], node->minCorner[2] );
-            glVertex3f( node->maxCorner[0], node->maxCorner[1], node->maxCorner[2] );
-            glVertex3f( node->maxCorner[0], node->minCorner[1], node->maxCorner[2] );
-
-            // Bottom
-            glVertex3f( node->minCorner[0], node->minCorner[1], node->minCorner[2] );
-            glVertex3f( node->minCorner[0], node->maxCorner[1], node->minCorner[2] );
-            glVertex3f( node->minCorner[0], node->maxCorner[1], node->maxCorner[2] );
-            glVertex3f( node->minCorner[0], node->minCorner[1], node->maxCorner[2] );
-        glEnd();
-    }
-
-    // Make it so we draw with filled polygons again
-    glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 }
 

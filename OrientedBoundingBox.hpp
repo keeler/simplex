@@ -66,8 +66,7 @@ class OrientedBoundingBox
         static void calculateOrthogonalAxes( Vector3f axes[], const Quaternion & orientation );
 
     private:
-        // radius = sqrt( a^2 + b^2 + c^2 ), need to multiply the halfEdgeLengths by 2 to get a, b, and c
-        void calculateRadius() { mRadius = ( mEdgeHalfLengths * 2 ).magnitude() / 2; };
+        void calculateRadius() { mRadius = mEdgeHalfLengths.magnitude(); };
 
         Vector3f   mCenter;
         Vector3f   mEdgeHalfLengths;

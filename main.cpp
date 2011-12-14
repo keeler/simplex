@@ -10,16 +10,19 @@
 using namespace std;
 
 // Should be anything more than 20, see lines 29-31, NUM_BOXES/20
-const int NUM_BOXES = 7000;
+const int NUM_BOXES = 3000;
 
 bool keyState[256] = { false };
 
 // For mouse motion
 bool _mouseWarped = false;
 float _mouseSensitivity = 0.1f;
+int _oldMouseX = 0;
+int _oldMouseY = 0;
 
 int _index = 0;
 float _angle = 30.0f;
+
 OrientedBoundingBox * _myBoxes;
 Vector3f * _rotationVectors;
 float * _rotationRates;
@@ -136,7 +139,6 @@ void initRendering()
 
     glEnable( GL_LIGHTING );    // Allows us to use light
 	glEnable( GL_LIGHT0 );
-  //  glEnable( GL_NORMALIZE );
 
     glShadeModel( GL_SMOOTH );
 
@@ -152,7 +154,7 @@ void handleResize( int width, int height )
     glMatrixMode( GL_PROJECTION );
     // Set the camera perspective
     glLoadIdentity();    // Reset the camera
-    _myCamera->perspective( 45.0, (double)width / (double)height, 100.0, 800.0 );
+    _myCamera->perspective( 45.0, (double)width / (double)height, 1.0, 1000.0 );
 }
 
 void drawScene()
@@ -162,24 +164,22 @@ void drawScene()
     glLoadIdentity();
 
 	handleKeyPress();
-	//_myCamera->look();
+	_myCamera->look();
 
-	glTranslatef( 0.0f, 0.0f, -600.0f );
-	glRotatef( _angle, 0.0f, 1.0f, 0.0f );
-    glColor3f( 1.0f, 1.0f, 1.0f );
+	glColor3f( 1.0f, 1.0f, 1.0f );
 	// Add positioned light 0
 	GLfloat lightColor0[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	GLfloat lightPos0[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	glLightfv( GL_LIGHT0, GL_DIFFUSE, lightColor0 );
 	glLightfv( GL_LIGHT0, GL_POSITION, lightPos0 );
 
- //   _myOctree->draw( Vector3f( 1.0f, 1.0f, 1.0f ) );
+	//_myOctree->draw( Vector3f( 1.0f, 1.0f, 1.0f ) );
 	Frustum cameraFrustum = _myCamera->getFrustum();
-	cameraFrustum.draw( Vector3f( 1.0f, 1.0f, 1.0f ) );
+	//cameraFrustum.draw( Vector3f( 1.0f, 1.0f, 1.0f ) );
 
     vector<BoxPair> collisionPairs;
     _myOctree->getPotentialCollisionPairs( collisionPairs );
- //   cout << "Potential collisions " << collisionPairs.size() << endl;
+	//cout << "Potential collisions " << collisionPairs.size() << endl;
     for( unsigned int i = 0; i < collisionPairs.size(); i++ )
     {
         if( collisionPairs[i].box1->collisionWith( *collisionPairs[i].box2 ) )
@@ -189,20 +189,20 @@ void drawScene()
         }
     }
 
+	set<OrientedBoundingBox *> visibleBoxes;
+	_myOctree->getBoxesWithinFrustum( cameraFrustum, visibleBoxes );
 	// Draw the boxes in the frustum
-    for( int i = 0; i < NUM_BOXES; i++ )
+	for( std::set<OrientedBoundingBox *>::iterator it = visibleBoxes.begin();
+         it != visibleBoxes.end();
+         ++it )
     {
-    	if( !cameraFrustum.isSphereInFrustum( _myBoxes[i].getCenter(), _myBoxes[i].getRadius() ) )
+    	if( ( *it )->getCollisionState() == true )
     	{
-    		continue;
-    	}
-    	else if( _myBoxes[i].getCollisionState() == true )
-    	{
-    		_myBoxes[i].draw( Vector3f( 1.0f, 0.0f, 0.0f ) );
+    		( *it )->draw( Vector3f( 1.0f, 0.0f, 0.0f ) );
         }
         else
         {
-			_myBoxes[i].draw( Vector3f( 1.0f, 0.0f, 1.0f ) );
+			( *it )->draw( Vector3f( 0.0f, 0.0f, 1.0f ) );
         }
     }
 
