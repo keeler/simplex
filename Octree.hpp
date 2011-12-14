@@ -36,10 +36,9 @@ class Octree
         // One eighth of the space. Each level has 8 of these, hence octree.
         struct OctreeNode
         {
-        	Vector3f center;
+			Vector3f center;
             Vector3f minCorner;
             Vector3f maxCorner;
-            Vector3f corners[8];
 
             bool hasChildren;
             OctreeNode * children[2][2][2];
@@ -67,8 +66,6 @@ class Octree
         static void destroyOctreeNode( OctreeNode *& node );
         // Populates the vector with potential collision pairs
         static void getPotentialCollisionPairs( OctreeNode * const node, std::vector<BoxPair> & pairs );
-        // Used in getBoxesWithinFrustum()
-        static int getIndexToCornerDirection( const Vector3f & normal );
         // Populates vector with boxes that are enclosed in or intersect the frustum
         static void getBoxesWithinFrustum( OctreeNode * const node, const Frustum & frustum, std::set<OrientedBoundingBox *> & visibleBoxes );
 

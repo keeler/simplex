@@ -19,15 +19,6 @@ void Octree::initializeNode( OctreeNode * const node, const Vector3f & minCorner
                              ( minCorner[1] + maxCorner[1] ) / 2,
                              ( minCorner[2] + maxCorner[2] ) / 2 );
 
-	node->corners[0] = Vector3f( minCorner[0], minCorner[1], minCorner[2] );
-	node->corners[1] = Vector3f( minCorner[0], minCorner[1], maxCorner[2] );
-	node->corners[2] = Vector3f( minCorner[0], maxCorner[1], minCorner[2] );
-	node->corners[3] = Vector3f( minCorner[0], maxCorner[1], maxCorner[2] );
-	node->corners[4] = Vector3f( maxCorner[0], minCorner[1], minCorner[2] );
-	node->corners[5] = Vector3f( maxCorner[0], minCorner[1], maxCorner[2] );
-	node->corners[6] = Vector3f( maxCorner[0], maxCorner[1], minCorner[2] );
-	node->corners[7] = Vector3f( maxCorner[0], maxCorner[1], maxCorner[2] );
-
     node->hasChildren = false;
     node->numBoxes = 0;
     node->depth = depth;
@@ -328,26 +319,6 @@ void Octree::getPotentialCollisionPairs( OctreeNode * const node, std::vector<Bo
             }
         }
     }
-}
-
-int Octree::getIndexToCornerDirection( const Vector3f & normal )
-{
-	int index = 0;
-
-	if( normal[2] >= -0.0 )
-	{
-		index |= 1;
-	}
-	if( normal[1] >= -0.0 )
-	{
-		index |= 2;
-	}
-	if( normal[0] >= -0.0 )
-	{
-		index |= 4;
-	}
-
-	return index;
 }
 
 void Octree::getBoxesWithinFrustum( OctreeNode * const node, const Frustum & frustum, std::set<OrientedBoundingBox *> & visibleBoxes )
