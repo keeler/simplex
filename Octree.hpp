@@ -29,7 +29,7 @@ class Octree
         void addBox( OrientedBoundingBox * box ) { insertBox( box, mRoot ); };
         void removeBox( OrientedBoundingBox * box ) { removeBox( box, mRoot ); };
         void getPotentialCollisionPairs( std::vector<BoxPair> & pairs ) const { getPotentialCollisionPairs( mRoot, pairs ); };
-        void getBoxesWithinFrustum( const Frustum & frustum, std::set<OrientedBoundingBox *> & visibleBoxes ) { getBoxesWithinFrustum( mRoot, frustum, visibleBoxes ); };
+        void getBoxesWithinFrustum( const Frustum & frustum, std::vector<OrientedBoundingBox *> & visibleBoxes ) { getBoxesWithinFrustum( mRoot, frustum, visibleBoxes ); };
         void draw( Vector3f color ) const { glPolygonMode( GL_FRONT_AND_BACK, GL_LINE ); drawNodeAndChildren( mRoot, color ); glPolygonMode( GL_FRONT_AND_BACK, GL_FILL ); };
 
     private:
@@ -59,18 +59,22 @@ class Octree
         static void removeBox( OrientedBoundingBox * const box, OctreeNode * const node );
         // Collect the boxes of the children of this node into the set
         static void collectBoxesFromChildren( const OctreeNode * const node, std::set<OrientedBoundingBox *> & collectedBoxes );
+		// Collect the boxes of the children of this node into the set
+        static void collectBoxesFromChildren( const OctreeNode * const node, std::vector<OrientedBoundingBox *> & collectedBoxes );
         // Destroy the children of this node, and collect all their boxes into this node
         static void collapseChildren( OctreeNode * const node );
-        // Deallocate all of the nodes in the tree below & including this one.
-        // Kill all the children, too :(
+        // Deallocate all of the nodes in the tree below and including this one.
         static void destroyOctreeNode( OctreeNode *& node );
-        // Populates the vector with potential collision pairs
-        static void getPotentialCollisionPairs( OctreeNode * const node, std::vector<BoxPair> & pairs );
-        // Populates vector with boxes that are enclosed in or intersect the frustum
-        static void getBoxesWithinFrustum( OctreeNode * const node, const Frustum & frustum, std::set<OrientedBoundingBox *> & visibleBoxes );
 
+        // Populates the vector with potential collision pairs
+        static void getPotentialCollisionPairs( const OctreeNode * const node, std::vector<BoxPair> & pairs );
+        // Populates vector with boxes that are enclosed in or intersect the frustum
+        static void getBoxesWithinFrustum( const OctreeNode * const node, const Frustum & frustum, std::vector<OrientedBoundingBox *> & visibleBoxes );
+
+		// Draw a box representing the node
+		static void drawNode( const OctreeNode * const node, const Vector3f & color );
         // Draw the outlines of the space divvied up by the octree
-        static void drawNodeAndChildren( OctreeNode * const node, const Vector3f & color );
+        static void drawNodeAndChildren( const OctreeNode * const node, const Vector3f & color );
 
         OctreeNode * mRoot;
 };

@@ -1,4 +1,5 @@
 #include "OrientedBoundingBox.hpp"
+#include "Plane.hpp"
 #include <cmath>
 #include <cstdlib>
 #include <GL/glut.h>
@@ -78,18 +79,18 @@ bool OrientedBoundingBox::collisionWith( const OrientedBoundingBox & otherBox ) 
 
     // These corner points should be precalculated already
     // Each face is determined by it's normal & a point in it, since it's basically a plane
-    Vector3f thisFaces[6][2] = { { -thisOrthogonalAxes[0], thisCorners[0] },
-                                 { -thisOrthogonalAxes[1], thisCorners[0] },
-                                 { -thisOrthogonalAxes[2], thisCorners[0] },
-                                 {  thisOrthogonalAxes[0], thisCorners[7] },
-                                 {  thisOrthogonalAxes[1], thisCorners[7] },
-                                 {  thisOrthogonalAxes[2], thisCorners[7] } };
-    Vector3f otherFaces[6][2] = { { -otherOrthogonalAxes[0], otherCorners[0] },
-                                  { -otherOrthogonalAxes[1], otherCorners[0] },
-                                  { -otherOrthogonalAxes[2], otherCorners[0] },
-                                  {  otherOrthogonalAxes[0], otherCorners[7] },
-                                  {  otherOrthogonalAxes[1], otherCorners[7] },
-                                  {  otherOrthogonalAxes[2], otherCorners[7] } };
+    Plane thisPlanes[6] = { Plane( -thisOrthogonalAxes[0], thisCorners[0] ),
+                            Plane( -thisOrthogonalAxes[1], thisCorners[0] ),
+                            Plane( -thisOrthogonalAxes[2], thisCorners[0] ),
+                            Plane(  thisOrthogonalAxes[0], thisCorners[7] ),
+                            Plane(  thisOrthogonalAxes[1], thisCorners[7] ),
+                            Plane(  thisOrthogonalAxes[2], thisCorners[7] ) };
+    Plane otherPlanes[6] = { Plane( -otherOrthogonalAxes[0], otherCorners[0] ),
+                             Plane( -otherOrthogonalAxes[1], otherCorners[0] ),
+                             Plane( -otherOrthogonalAxes[2], otherCorners[0] ),
+                             Plane(  otherOrthogonalAxes[0], otherCorners[7] ),
+                             Plane(  otherOrthogonalAxes[1], otherCorners[7] ),
+                             Plane(  otherOrthogonalAxes[2], otherCorners[7] ) };
 
     // The method of separating axes for obb collision detection works like this:
     // 1) The corners of box A are checked against each side of box B.
@@ -107,13 +108,9 @@ bool OrientedBoundingBox::collisionWith( const OrientedBoundingBox & otherBox ) 
         bool allPositive = true;
         for( int j = 0; j < 8; j++ )    // 8 is number of corners to check
         {
-            // Transform to coordinates relative to the face's plane-determining point
-            Vector3f transformedCorner = thisCorners[j] - otherFaces[i][1];
-            float scalarProjection = otherFaces[i][0].dot( transformedCorner );
-
             // A negative projection has been found, no need to keep checking.
             // It does not mean that there is a collision though.
-            if( scalarProjection < 0 )
+            if( otherPlanes[i].isInNegativeHalfSpace( thisCorners[j] ) )
             {
                 allPositive = false;
                 break;
@@ -132,13 +129,9 @@ bool OrientedBoundingBox::collisionWith( const OrientedBoundingBox & otherBox ) 
         bool allPositive = true;
         for( int j = 0; j < 8; j++ )
         {
-            // Transform to coordinates relative to the face's plane-determining point
-            Vector3f transformedCorner = otherCorners[j] - thisFaces[i][1];
-            float scalarProjection = thisFaces[i][0].dot( transformedCorner );
-
             // A negative projection has been found, no need to keep checking.
             // It does not mean that there is a collision though.
-            if( scalarProjection < 0 )
+            if( thisPlanes[i].isInNegativeHalfSpace( otherCorners[j] ) )
             {
                 allPositive = false;
                 break;

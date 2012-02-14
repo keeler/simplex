@@ -10,7 +10,7 @@
 // These correspond to mOrthogonalAxes indices 0, 1, and 2.
 // The corners are labelled as they are indexed in the array,
 // based on this axis orientation. Using an awesome ACSII cube.
-// What up, bitches.
+// What up.
 //
 //           (5) _________________________ (4)
 //              / _____________________  /|

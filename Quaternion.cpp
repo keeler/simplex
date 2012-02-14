@@ -12,7 +12,7 @@ Quaternion::Quaternion() :
 	y( 0.0f ),
 	z( 0.0f )
 {
-	this->normalize();
+	// Already normalized
 }
 
 Quaternion::Quaternion( float W, float X, float Y, float Z ) :

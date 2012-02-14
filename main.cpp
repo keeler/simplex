@@ -10,18 +10,18 @@
 using namespace std;
 
 // Should be anything more than 20, see lines 29-31, NUM_BOXES/20
-const int NUM_BOXES = 3000;
+const int NUM_BOXES = 500;
 
 bool keyState[256] = { false };
 
 // For mouse motion
 bool _mouseWarped = false;
 float _mouseSensitivity = 0.1f;
-int _oldMouseX = 0;
-int _oldMouseY = 0;
 
 int _index = 0;
 float _angle = 30.0f;
+
+bool _useCamera = true;
 
 OrientedBoundingBox * _myBoxes;
 Vector3f * _rotationVectors;
@@ -41,9 +41,9 @@ void generateBoxes()
     srand( time( NULL ) );
     for( int i = 0; i < NUM_BOXES; i++ )
     {
-        center = Vector3f( (rand()%2?-1.0f:1.0f)*(rand()%(NUM_BOXES/20))/1.0,
-                           (rand()%2?-1.0f:1.0f)*(rand()%(NUM_BOXES/20))/1.0,
-                           (rand()%2?-1.0f:1.0f)*(rand()%(NUM_BOXES/20))/1.0 );
+        center = Vector3f( (rand()%2?-1.0f:1.0f)*(rand()%(NUM_BOXES/10))/1.0,
+                           (rand()%2?-1.0f:1.0f)*(rand()%(NUM_BOXES/10))/1.0,
+                           (rand()%2?-1.0f:1.0f)*(rand()%(NUM_BOXES/10))/1.0 );
         edgeHalfLengths = Vector3f( 0.5f, 1.0f, 2.0f );
 
         _myBoxes[i] = OrientedBoundingBox( center, edgeHalfLengths, defaultOrientation );
@@ -73,6 +73,10 @@ void keyDown( unsigned char key, int x, int y )
 		delete _myCamera;
 		exit( 1 );
 	}
+	if( key == 'c' )
+	{
+		_useCamera = !_useCamera;
+	}
 
 	keyState[ key ] = true;
 }
@@ -100,6 +104,24 @@ void handleKeyPress()
 	{
 		_myCamera->moveRight( 5.0f );
     }
+
+    if( keyState['j'] )
+	{
+		_myCamera->rotateYaw( -0.5f );
+    }
+    if( keyState['l'] )
+	{
+		_myCamera->rotateYaw( 0.5f );
+    }
+    if( keyState['i'] )
+	{
+		_myCamera->rotatePitch( -0.5f );
+    }
+    if( keyState['k'] )
+	{
+		_myCamera->rotatePitch( 0.5f );
+    }
+    
 
 	glutPostRedisplay();
 }
@@ -164,9 +186,16 @@ void drawScene()
     glLoadIdentity();
 
 	handleKeyPress();
-	_myCamera->look();
 
-	glColor3f( 1.0f, 1.0f, 1.0f );
+	if( _useCamera )
+	{
+		_myCamera->look();
+	}
+	else
+	{
+		glRotatef( 90, 0.0f, 1.0f, 0.0f );
+		glTranslatef( 0.0f, 0.0f, -500 );
+	}
 	// Add positioned light 0
 	GLfloat lightColor0[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	GLfloat lightPos0[] = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -179,8 +208,8 @@ void drawScene()
 
     vector<BoxPair> collisionPairs;
     _myOctree->getPotentialCollisionPairs( collisionPairs );
-	//cout << "Potential collisions " << collisionPairs.size() << endl;
-    for( unsigned int i = 0; i < collisionPairs.size(); i++ )
+	unsigned int numCollisionPairs = collisionPairs.size();
+    for( unsigned int i = 0; i < numCollisionPairs; i++ )
     {
         if( collisionPairs[i].box1->collisionWith( *collisionPairs[i].box2 ) )
         {
@@ -189,10 +218,10 @@ void drawScene()
         }
     }
 
-	set<OrientedBoundingBox *> visibleBoxes;
+	vector<OrientedBoundingBox *> visibleBoxes;
 	_myOctree->getBoxesWithinFrustum( cameraFrustum, visibleBoxes );
 	// Draw the boxes in the frustum
-	for( std::set<OrientedBoundingBox *>::iterator it = visibleBoxes.begin();
+	for( std::vector<OrientedBoundingBox *>::iterator it = visibleBoxes.begin();
          it != visibleBoxes.end();
          ++it )
     {
@@ -207,7 +236,7 @@ void drawScene()
     }
 
 	// Reset the collided ones collision state to false
-    for( unsigned int i = 0; i < collisionPairs.size(); i++ )
+    for( unsigned int i = 0; i < numCollisionPairs; i++ )
     {
         collisionPairs[i].box1->setCollisionState( false );
         collisionPairs[i].box2->setCollisionState( false );
@@ -240,8 +269,8 @@ int main( int argc, char **argv )
     generateBoxes();
     generateRotationVectors();
 
-    _myOctree = new Octree( Vector3f( -NUM_BOXES / 20.0f, -NUM_BOXES / 20.0f, -NUM_BOXES / 20.0f ),
-                            Vector3f( NUM_BOXES / 20.0f, NUM_BOXES / 20.0f, NUM_BOXES / 20.0f ) );
+    _myOctree = new Octree( Vector3f( -NUM_BOXES / 10.0f, -NUM_BOXES / 10.0f, -NUM_BOXES / 10.0f ),
+                            Vector3f( NUM_BOXES / 10.0f, NUM_BOXES / 10.0f, NUM_BOXES / 10.0f ) );
     for( int i = 0; i < NUM_BOXES; i++ )
     {
         _myOctree->addBox( &_myBoxes[i] );

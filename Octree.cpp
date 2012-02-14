@@ -1,7 +1,6 @@
 #include "Octree.hpp"
+#include "Plane.hpp"
 #include "GL/glut.h"
-#include <iostream>
-using namespace std;
 
 Octree::Octree( const Vector3f & minCorner, const Vector3f & maxCorner )
 {
@@ -15,10 +14,7 @@ void Octree::initializeNode( OctreeNode * const node, const Vector3f & minCorner
 {
     node->minCorner = minCorner;
     node->maxCorner = maxCorner;
-    node->center = Vector3f( ( minCorner[0] + maxCorner[0] ) / 2,
-                             ( minCorner[1] + maxCorner[1] ) / 2,
-                             ( minCorner[2] + maxCorner[2] ) / 2 );
-
+    node->center = ( minCorner + maxCorner ) / 2;
     node->hasChildren = false;
     node->numBoxes = 0;
     node->depth = depth;
@@ -40,10 +36,10 @@ void Octree::createChildren( OctreeNode * const node )
 	initializeNode( node->children[0][0][1], Vector3f( node->minCorner[0], node->minCorner[1], node->center[2] ),    Vector3f( node->center[0],    node->center[1],    node->maxCorner[2] ), newDepth );
 	initializeNode( node->children[0][1][0], Vector3f( node->minCorner[0], node->center[1],    node->minCorner[2] ), Vector3f( node->center[0],    node->maxCorner[1], node->center[2] ),    newDepth );
 	initializeNode( node->children[0][1][1], Vector3f( node->minCorner[0], node->center[1],    node->center[2] ),    Vector3f( node->center[0],    node->maxCorner[1], node->maxCorner[2] ), newDepth );
-	initializeNode( node->children[1][0][0], Vector3f( node->center[0],    node->minCorner[1], node->minCorner[2] ), Vector3f( node->maxCorner[0], node->center[1],    node->maxCorner[2] ), newDepth );
-	initializeNode( node->children[1][0][1], Vector3f( node->center[0],    node->minCorner[1], node->center[2] ),    Vector3f( node->maxCorner[0], node->center[1],    node->center[2] ),    newDepth );
-	initializeNode( node->children[1][1][0], Vector3f( node->center[0],    node->center[1],    node->minCorner[2] ), Vector3f( node->maxCorner[0], node->maxCorner[1], node->maxCorner[2] ), newDepth );
-	initializeNode( node->children[1][1][1], Vector3f( node->center[0],    node->center[1],    node->center[2] ),    Vector3f( node->maxCorner[0], node->maxCorner[1], node->center[2] ),    newDepth );
+	initializeNode( node->children[1][0][0], Vector3f( node->center[0],    node->minCorner[1], node->minCorner[2] ), Vector3f( node->maxCorner[0], node->center[1],    node->center[2] ), newDepth );
+	initializeNode( node->children[1][0][1], Vector3f( node->center[0],    node->minCorner[1], node->center[2] ),    Vector3f( node->maxCorner[0], node->center[1],    node->maxCorner[2] ),    newDepth );
+	initializeNode( node->children[1][1][0], Vector3f( node->center[0],    node->center[1],    node->minCorner[2] ), Vector3f( node->maxCorner[0], node->maxCorner[1], node->center[2] ), newDepth );
+	initializeNode( node->children[1][1][1], Vector3f( node->center[0],    node->center[1],    node->center[2] ),    Vector3f( node->maxCorner[0], node->maxCorner[1], node->maxCorner[2] ),    newDepth );
 
     // Now, node has children
     node->hasChildren = true;
@@ -246,6 +242,32 @@ void Octree::collectBoxesFromChildren( const OctreeNode * const node, std::set<O
     }
 }
 
+void Octree::collectBoxesFromChildren( const OctreeNode * const node, std::vector<OrientedBoundingBox *> & collectedBoxes )
+{
+    // Recurse on children
+    if( node->hasChildren )
+    {
+        collectBoxesFromChildren( node->children[0][0][0], collectedBoxes );
+        collectBoxesFromChildren( node->children[0][0][1], collectedBoxes );
+        collectBoxesFromChildren( node->children[0][1][0], collectedBoxes );
+        collectBoxesFromChildren( node->children[0][1][1], collectedBoxes );
+        collectBoxesFromChildren( node->children[1][0][0], collectedBoxes );
+        collectBoxesFromChildren( node->children[1][0][1], collectedBoxes );
+        collectBoxesFromChildren( node->children[1][1][0], collectedBoxes );
+        collectBoxesFromChildren( node->children[1][1][1], collectedBoxes );
+    }
+    // For leaf nodes
+    else
+    {
+        for( std::set<OrientedBoundingBox *>::iterator it = node->boxes.begin();
+             it != node->boxes.end();
+             ++it )
+        {
+            collectedBoxes.push_back( *it );
+        }
+    }
+}
+
 void Octree::collapseChildren( OctreeNode * const node )
 {
     collectBoxesFromChildren( node, node->boxes );
@@ -267,8 +289,7 @@ void Octree::collapseChildren( OctreeNode * const node )
 
 void Octree::destroyOctreeNode( OctreeNode *& node )
 {
-    // Must destroy my children before destroying myself.
-    // Feel like psycho typing such things.
+    // Recurse on children first
     if( node->hasChildren )
     {
         destroyOctreeNode( node->children[0][0][0] );
@@ -285,7 +306,7 @@ void Octree::destroyOctreeNode( OctreeNode *& node )
     node = NULL;
 }
 
-void Octree::getPotentialCollisionPairs( OctreeNode * const node, std::vector<BoxPair> & pairs )
+void Octree::getPotentialCollisionPairs( const OctreeNode * const node, std::vector<BoxPair> & pairs )
 {
     if( node->hasChildren )
     {
@@ -300,101 +321,102 @@ void Octree::getPotentialCollisionPairs( OctreeNode * const node, std::vector<Bo
     }
     else
     {
-        for( std::set<OrientedBoundingBox *>::iterator it = node->boxes.begin();
-             it != node->boxes.end();
-             ++it )
-        {
-            for( std::set<OrientedBoundingBox *>::iterator it2 = node->boxes.begin();
-                 it2 != node->boxes.end();
-                 ++it2 )
-            {
-                // This test makes sure that we only add each pair once
-                if( *it < *it2 )
-                {
-                    BoxPair pair;
-                    pair.box1 = *it;
-                    pair.box2 = *it2;
-                    pairs.push_back( pair );
-                }
-            }
-        }
+		BoxPair pair;
+		int i = 0;    // Loop control to make sure we don't check too many pairs
+		for( std::set<OrientedBoundingBox *>::const_iterator it = node->boxes.begin();
+			 i < node->numBoxes - 1;
+			 i++ )
+		{
+			std::set<OrientedBoundingBox *>::const_iterator temp = it;
+			for( std::set<OrientedBoundingBox *>::const_iterator it2 = ++it;
+				 it2 != node->boxes.end();
+				 ++it2 )
+			{
+				pair.box1 = *temp;
+				pair.box2 = *it2;
+				pairs.push_back( pair );
+			}
+		}
     }
 }
 
-void Octree::getBoxesWithinFrustum( OctreeNode * const node, const Frustum & frustum, std::set<OrientedBoundingBox *> & visibleBoxes )
+void Octree::getBoxesWithinFrustum( const OctreeNode * const node, const Frustum & frustum, std::vector<OrientedBoundingBox *> & visibleBoxes )
 {
 	int status = -1;                // Assume inside; -1 = inside, 0 = outside; 1 = intersect
 
 	const Vector3f * frustumCorners = frustum.getCorners();
 	const Vector3f * frustumNormals = frustum.getNormals();
 
-	Vector3f frustumPlanes[6][2] = { { frustumNormals[Frustum::NEAR],   frustumCorners[Frustum::NTR] },		// Near
-									 { frustumNormals[Frustum::TOP],    frustumCorners[Frustum::NTR] },		// Top
-									 { frustumNormals[Frustum::RIGHT],  frustumCorners[Frustum::NTR] },		// Right
-									 { frustumNormals[Frustum::FAR],    frustumCorners[Frustum::FBL] },		// Far
-									 { frustumNormals[Frustum::BOTTOM], frustumCorners[Frustum::FBL] },		// Bottom
-									 { frustumNormals[Frustum::LEFT],   frustumCorners[Frustum::FBL] } };	// Left
+	Plane frustumPlanes[6] = { Plane( frustumNormals[Frustum::NEAR],   frustumCorners[Frustum::NTR] ),		// Near
+							   Plane( frustumNormals[Frustum::TOP],    frustumCorners[Frustum::NTR] ),		// Top
+							   Plane( frustumNormals[Frustum::RIGHT],  frustumCorners[Frustum::NTR] ),		// Right
+							   Plane( frustumNormals[Frustum::FAR],    frustumCorners[Frustum::FBL] ),		// Far
+							   Plane( frustumNormals[Frustum::BOTTOM], frustumCorners[Frustum::FBL] ),		// Bottom
+							   Plane( frustumNormals[Frustum::LEFT],   frustumCorners[Frustum::FBL] ) };	// Left
 
 	bool intersectFlag = false;
-	for( int i = 0; i < 6; i++ )
+	// Do a sphere cull first, if the box is outside the frustum this will probably be much faster
+	if( !frustum.isSphereInFrustum( node->center, ( node->maxCorner - node->center ).magnitude() ) )
 	{
-		Vector3f currentNormal = frustumPlanes[i][0];
-		Vector3f currentPlanePoint = frustumPlanes[i][1];
-		Vector3f closePoint = node->maxCorner;
+		status = 0;
+	}
+	// The box potentially intersects or is inside the frustum. Could still be outside, though.
+	else
+	{
+		float nodeRadius = node->maxCorner[0] - node->center[0];
+		for( int i = 0; i < 6; i++ )
+		{
+			Vector3f currentNormal = frustumPlanes[i].getNormal();
+			Vector3f direction = Vector3f( 1.0, 1.0, 1.0 );    // Default to pointing towards maxCorner
 
-		if( currentNormal[0] >= 0 )
-		{
-			closePoint[0] = node->minCorner[0];
-		}
-		if( currentNormal[1] >= 0 )
-		{
-			closePoint[1] = node->minCorner[1];
-		}
-		if( currentNormal[2] >= 0 )
-		{
-			closePoint[2] = node->minCorner[2];
-		}
+			if( currentNormal[0] >= 0 )
+			{
+				direction[0] = -1.0;
+			}
+			if( currentNormal[1] >= 0 )
+			{
+				direction[1] = -1.0;
+			}
+			if( currentNormal[2] >= 0 )
+			{
+				direction[2] = -1.0;
+			}
 
-		// If the closest point isn't inside the frustum, then the node must be outside the frustum
-		if( currentNormal.dot( closePoint - currentPlanePoint ) > 0 )
-		{
-			status = 0;
-			break;
-		}
+			// Node corner closest to plane
+			Vector3f closePoint = node->center + direction * nodeRadius;
+			
+			// If the closest point isn't inside the frustum, then the node must be outside the frustum
+			if( frustumPlanes[i].isInPositiveHalfSpace( closePoint ) )
+			{
+				status = 0;
+				break;
+			}
 
-		Vector3f farPoint = node->minCorner;
+			// Node corner farthest from plane, simply opposite direction from closePoint
+			Vector3f farPoint = node->center - direction * nodeRadius;
 
-		if( currentNormal[0] >= 0 )
-		{
-			farPoint[0] = node->maxCorner[0];
-		}
-		if( currentNormal[1] >= 0 )
-		{
-			farPoint[1] = node->maxCorner[1];
-		}
-		if( currentNormal[2] >= 0 )
-		{
-			farPoint[2] = node->maxCorner[2];
-		}
-
-		if( currentNormal.dot( farPoint - currentPlanePoint ) > 0 )
-		{
-			intersectFlag = true;
+			if( frustumPlanes[i].isInPositiveHalfSpace( farPoint ) )
+			{
+				intersectFlag = true;
+			}
 		}
 	}
 
-	// If status hasn't been changed to 'outside'
+	// If status hasn't been changed to 'outside', and the intersect flag is
+	// set, then the node is only partially within the frustum
 	if( status != 0 && intersectFlag )
 	{
 		status = 1;
 	}
 
-	// If the node is completely outside
+	// If the node is completely outside, no boxes within it or any of its
+	// children could be inside
 	if( status == 0 )
 	{
 		return;
 	}
-	// If the node is completely inside
+	// If the node is completely inside, then all of the boxes within it and
+	// its children are inside
 	else if( status == -1 )
 	{
 		collectBoxesFromChildren( node, visibleBoxes );
@@ -418,63 +440,68 @@ void Octree::getBoxesWithinFrustum( OctreeNode * const node, const Frustum & fru
 				 it != node->boxes.end();
 				 ++it )
 			{
-				visibleBoxes.insert( *it );
+				visibleBoxes.push_back( *it );
 			}
 		}
 	}
 }
 
-void Octree::drawNodeAndChildren( OctreeNode * const node, const Vector3f & color )
+void Octree::drawNode( const OctreeNode * const node, const Vector3f & color )
 {
 	glColor3f( color[0], color[1], color[2] );
     glBegin( GL_QUADS );
-        // Back
+        // Top
+        glVertex3f( node->minCorner[0], node->maxCorner[1], node->minCorner[2] );
+        glVertex3f( node->minCorner[0], node->maxCorner[1], node->maxCorner[2] );
+        glVertex3f( node->maxCorner[0], node->maxCorner[1], node->maxCorner[2] );
+        glVertex3f( node->maxCorner[0], node->maxCorner[1], node->minCorner[2] );
+
+		// Bottom
         glVertex3f( node->minCorner[0], node->minCorner[1], node->minCorner[2] );
-        glVertex3f( node->maxCorner[0], node->minCorner[1], node->minCorner[2] );
-        glVertex3f( node->maxCorner[0], node->maxCorner[1], node->minCorner[2] );
-        glVertex3f( node->minCorner[0], node->maxCorner[1], node->minCorner[2] );
-
-        // Right
-        glVertex3f( node->minCorner[0], node->maxCorner[1], node->minCorner[2] );
-        glVertex3f( node->maxCorner[0], node->maxCorner[1], node->minCorner[2] );
-        glVertex3f( node->maxCorner[0], node->maxCorner[1], node->maxCorner[2] );
-        glVertex3f( node->minCorner[0], node->maxCorner[1], node->maxCorner[2] );
-
-        // Front
-        glVertex3f( node->minCorner[0], node->maxCorner[1], node->maxCorner[2] );
-        glVertex3f( node->maxCorner[0], node->maxCorner[1], node->maxCorner[2] );
-        glVertex3f( node->maxCorner[0], node->minCorner[1], node->maxCorner[2] );
         glVertex3f( node->minCorner[0], node->minCorner[1], node->maxCorner[2] );
-
+        glVertex3f( node->maxCorner[0], node->minCorner[1], node->maxCorner[2] );
+        glVertex3f( node->maxCorner[0], node->minCorner[1], node->minCorner[2] );
+        
         // Left
         glVertex3f( node->minCorner[0], node->minCorner[1], node->minCorner[2] );
+        glVertex3f( node->minCorner[0], node->minCorner[1], node->maxCorner[2] );
+        glVertex3f( node->minCorner[0], node->maxCorner[1], node->maxCorner[2] );
+        glVertex3f( node->minCorner[0], node->maxCorner[1], node->minCorner[2] );
+
+		// Right
         glVertex3f( node->maxCorner[0], node->minCorner[1], node->minCorner[2] );
         glVertex3f( node->maxCorner[0], node->minCorner[1], node->maxCorner[2] );
-        glVertex3f( node->minCorner[0], node->minCorner[1], node->maxCorner[2] );
-
-        // Top
-        glVertex3f( node->maxCorner[0], node->minCorner[1], node->minCorner[2] );
+        glVertex3f( node->maxCorner[0], node->maxCorner[1], node->maxCorner[2] );
         glVertex3f( node->maxCorner[0], node->maxCorner[1], node->minCorner[2] );
+
+		// Far
+        glVertex3f( node->minCorner[0], node->minCorner[1], node->maxCorner[2] );
+        glVertex3f( node->minCorner[0], node->maxCorner[1], node->maxCorner[2] );
         glVertex3f( node->maxCorner[0], node->maxCorner[1], node->maxCorner[2] );
         glVertex3f( node->maxCorner[0], node->minCorner[1], node->maxCorner[2] );
 
-        // Bottom
+		// Near
         glVertex3f( node->minCorner[0], node->minCorner[1], node->minCorner[2] );
         glVertex3f( node->minCorner[0], node->maxCorner[1], node->minCorner[2] );
-        glVertex3f( node->minCorner[0], node->maxCorner[1], node->maxCorner[2] );
-        glVertex3f( node->minCorner[0], node->minCorner[1], node->maxCorner[2] );
+        glVertex3f( node->maxCorner[0], node->maxCorner[1], node->minCorner[2] );
+        glVertex3f( node->maxCorner[0], node->minCorner[1], node->minCorner[2] );
     glEnd();
-        
-    if( node->hasChildren )
-    {
-		drawNodeAndChildren( node->children[0][0][0], color );
-		drawNodeAndChildren( node->children[0][0][1], color );
-		drawNodeAndChildren( node->children[0][1][0], color );
-		drawNodeAndChildren( node->children[0][1][1], color );
-		drawNodeAndChildren( node->children[1][0][0], color );
-		drawNodeAndChildren( node->children[1][0][1], color );
-		drawNodeAndChildren( node->children[1][1][0], color );
-		drawNodeAndChildren( node->children[1][1][1], color );
-    }
 }
 
+void Octree::drawNodeAndChildren( const OctreeNode * const node, const Vector3f & color )
+{
+	drawNode( node, color );
+
+    if( node->hasChildren )
+    {
+		drawNode( node->children[0][0][0], color );
+		drawNode( node->children[0][0][1], color );
+		drawNode( node->children[0][1][0], color );
+		drawNode( node->children[0][1][1], color );
+		drawNode( node->children[1][0][0], color );
+		drawNode( node->children[1][0][1], color );
+		drawNode( node->children[1][1][0], color );
+		drawNode( node->children[1][1][1], color );
+    }
+
+}

@@ -1,8 +1,8 @@
 CC = g++
-CFLAGS = -Wall -g
+CFLAGS = -Wall -pg
 PROG = main
 
-SRCS = main.cpp Vector3f.cpp Quaternion.cpp Frustum.cpp OrientedBoundingBox.cpp Octree.cpp Camera.cpp
+SRCS = main.cpp Vector3f.cpp Plane.cpp Quaternion.cpp Frustum.cpp OrientedBoundingBox.cpp Octree.cpp Camera.cpp
 
 LIBS = -lglut -lGLU
 
