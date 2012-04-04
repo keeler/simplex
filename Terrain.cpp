@@ -1,3 +1,7 @@
+/*
+* Borrowed from http://www.videotutorialsrock.com
+*/
+
 #include "Terrain.hpp"
 #include "ImageLoader.hpp"
 #include "GL/glut.h"

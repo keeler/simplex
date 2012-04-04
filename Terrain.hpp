@@ -1,3 +1,7 @@
+/*
+* Borrowed from http://www.videotutorialsrock.com
+*/
+
 #ifndef TERRAIN_HPP
 #define TERRAIN_HPP
 
