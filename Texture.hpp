@@ -10,6 +10,7 @@ class Texture
 		~Texture();
 
 		void loadBmp( const std::string & filename );
+		void bind() const;
 
 		int getTextureId() const { return mTextureId; };
 		std::string getFilename() const { return mFilename; };

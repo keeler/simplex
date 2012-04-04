@@ -33,3 +33,11 @@ void Texture::loadBmp( const std::string & filename )
 		delete [] pixels;
 	}
 }
+
+void Texture::bind() const
+{
+	glEnable( GL_TEXTURE_2D );
+	glBindTexture( GL_TEXTURE_2D, mTextureId );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+}
