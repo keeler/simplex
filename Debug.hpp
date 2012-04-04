@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <string>
 
-// Change this to ASSERTIONS_OFF to turn them off
+// Change to 0 to turn them off
 #define ASSERTIONS_ON 1
 
 /***************************************
