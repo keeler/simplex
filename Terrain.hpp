@@ -1,17 +1,18 @@
 /*
-* Borrowed from http://www.videotutorialsrock.com
+* Modified from http://www.videotutorialsrock.com
 */
 
 #ifndef TERRAIN_HPP
 #define TERRAIN_HPP
 
 #include "Vector3f.hpp"
+#include "Texture.hpp"
 #include <string>
 
 class Terrain
 {
 	public:
-		Terrain( const std::string & filename, float heightScale );    // Heights of terrain will range from -heightScale / 2 to heightScale / 2
+		Terrain( const std::string & heightmapFilename, const std::string & textureFilename, const float heightScale );    // Heights of terrain will range from -heightScale / 2 to heightScale / 2
 		~Terrain();
 
 		void render() const;
@@ -22,10 +23,11 @@ class Terrain
 		void computeNormals();
 
 		float		*mHeightMap;
+		Vector3f	*mNormals;
 		int			mWidth;
 		int			mLength;
 
-		Vector3f	*mNormals;
+		Texture		*mTexture;
 };
 
 #endif

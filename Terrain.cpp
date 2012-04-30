@@ -1,16 +1,18 @@
 /*
-* Borrowed from http://www.videotutorialsrock.com
+* Modified from http://www.videotutorialsrock.com
 */
 
 #include "Terrain.hpp"
+#include "Texture.hpp"
 #include "ImageLoader.hpp"
 #include "GL/glut.h"
 
-Terrain::Terrain( const std::string & filename, float heightScale )
+Terrain::Terrain( const std::string & heightmapFilename, const std::string & textureFilename, const float heightScale )
 {
-	char *pixels = NULL;
+	mTexture = new Texture( textureFilename );
 
-	loadBitmap( filename, pixels, mWidth, mLength );
+	char *pixels = NULL;
+	loadBitmap( heightmapFilename, pixels, mWidth, mLength );
 
 	mHeightMap = new float[mWidth * mLength];
 	for( int z = 0; z < mLength; z++ )
@@ -29,19 +31,23 @@ Terrain::Terrain( const std::string & filename, float heightScale )
 
 Terrain::~Terrain()
 {
-	if( mHeightMap != NULL )
-	{
-		delete [] mHeightMap;
-	}
-	if( mNormals != NULL )
-	{
-		delete [] mNormals;
-	}
+	delete [] mHeightMap;
+	delete [] mNormals;
+	delete mTexture;
 }
 
 void Terrain::render() const
 {
-	glColor3f( 0.3f, 0.5f, 0.7f );
+	mTexture->bind();
+
+	// Texturing quads (each of which is 2 triangles) is a lot easier than
+	// texturing triangles themselves. Texture a square group of quads, where
+	// the reciprocal of the delta below is the number of quads along one edge
+	// of the square.
+	float textureXCoord = 0.0f;
+	float textureYCoord = 0.0f;
+	float textureCoordDelta = 0.1f;
+
 	for( int z = 0; z < mLength - 1; z++ )
 	{
 		glBegin( GL_TRIANGLE_STRIP );
@@ -49,13 +55,19 @@ void Terrain::render() const
 		{
 			Vector3f normal = mNormals[x * mWidth + z];
 			glNormal3f( normal[0], normal[1], normal[2] );
+			glTexCoord2f( textureXCoord, textureYCoord );
 			glVertex3f( x, mHeightMap[mWidth * x + z], z );
 
 			normal = mNormals[x * mWidth + ( z + 1 )];
 			glNormal3f( normal[0], normal[1], normal[2] );
-			glVertex3f( x, mHeightMap[mWidth * x + ( z + 1 )], z + 1 );
+			glTexCoord2f( textureXCoord, textureYCoord + 0.25f );
+			glVertex3f( x, mHeightMap[mWidth * x + ( z + 1 )], (z + 1) );
+
+			textureXCoord += textureCoordDelta;
 		}
 		glEnd();
+
+		textureYCoord += textureCoordDelta;
 	}
 }
 
