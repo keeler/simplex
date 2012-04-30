@@ -61,7 +61,7 @@ void Terrain::render() const
 			normal = mNormals[x * mWidth + ( z + 1 )];
 			glNormal3f( normal[0], normal[1], normal[2] );
 			glTexCoord2f( textureXCoord, textureYCoord + 0.25f );
-			glVertex3f( x, mHeightMap[mWidth * x + ( z + 1 )], (z + 1) );
+			glVertex3f( x, mHeightMap[mWidth * x + ( z + 1 )], z + 1 );
 
 			textureXCoord += textureCoordDelta;
 		}
@@ -148,7 +148,7 @@ void Terrain::computeNormals()
 			}
 			if( z < mLength - 1 )
 			{
-				sum += tempNormals[x * mWidth + ( z + 1)] * dropOffRatio;
+				sum += tempNormals[x * mWidth + ( z + 1 )] * dropOffRatio;
 			}
 
 			sum.normalize();
