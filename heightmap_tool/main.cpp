@@ -235,7 +235,7 @@ void drawScene()
 		glLightModelfv( GL_LIGHT_MODEL_AMBIENT, ambientColor );
 		
 		GLfloat lightColor0[] = { 0.6f, 0.6f, 0.6f, 1.0f };
-		GLfloat lightPos0[] = { -0.5f, 100 + ( _imageWidth + _imageHeight ) / 5.0f, 0.1f, 0.0f };
+		GLfloat lightPos0[] = { 0.0f, 300 + abs(_myTerrainPreview->getHighestValue()), 0.0f, 0.0f };
 		glLightfv( GL_LIGHT0, GL_DIFFUSE, lightColor0 );
 		glLightfv( GL_LIGHT0, GL_POSITION, lightPos0 );
 		

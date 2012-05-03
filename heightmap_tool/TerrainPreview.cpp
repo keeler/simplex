@@ -19,6 +19,7 @@ TerrainPreview::~TerrainPreview()
 
 void TerrainPreview::setHeightmap( unsigned char *pixels )
 {
+	mHighestValue = -0.5f * mHeightScale;
 	for( int z = 0; z < mLength; z++ )
 	{
 		for( int x = 0; x < mWidth; x++ )
@@ -27,6 +28,10 @@ void TerrainPreview::setHeightmap( unsigned char *pixels )
 			unsigned char color = pixels[3 * ( mWidth * x + z )];
 			// Varies from - height / 2 to height / 2
 			mHeightMap[mWidth * x + z] = mHeightScale * ( ( color / 255.0f ) - 0.5f );
+			if( mHeightMap[mWidth * x + z] > mHighestValue )
+			{
+				mHighestValue = mHeightMap[mWidth * x + z];
+			}
 		}
 	}
 
