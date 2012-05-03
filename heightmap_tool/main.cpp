@@ -387,11 +387,11 @@ void floodFill( int r, int g, int b )
 				float distanceSquared = ( x - _mousePosX ) * ( x - _mousePosX ) + ( y - _mousePosY ) * ( y - _mousePosY );
 				if( distanceSquared <= _paintbrushRadius * _paintbrushRadius )
 				{
-					// Note that it's ( _imageHeight - y ) because when you pass the
+					// Note that it's ( _imageHeight - 1 - y ) because when you pass the
 					// pixel array to glTexSubImage2D, the vertical axis is flipped
-					_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 0] = r;
-					_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 1] = g;
-					_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 2] = b;
+					_editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + 0] = r;
+					_editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + 1] = g;
+					_editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + 2] = b;
 				}
 			}
 		}
@@ -413,7 +413,7 @@ void raiseHill( float changeIntensity )
 				float distance = sqrt( pow( x - _mousePosX, 2 ) + pow( y - _mousePosY, 2 ) );
 				if( distance <= _paintbrushRadius )
 				{
-					// Note that it's ( _imageHeight - y ) because when you pass the
+					// Note that it's ( _imageHeight - 1 - y ) because when you pass the
 					// pixel array to glTexSubImage2D, the vertical axis is flipped
 					unsigned char delta = (0.5)*changeIntensity * ( ( -distance / _paintbrushRadius ) + 1 );
 					// Red component
@@ -427,23 +427,23 @@ void raiseHill( float changeIntensity )
 					}
 
 					// Green component
-					if( _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 1] + delta < 255 )
+					if( _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + 1] + delta < 255 )
 					{
-						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 1] += delta;
+						_editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + 1] += delta;
 					}
 					else
 					{
-						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 1] = 255;
+						_editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + 1] = 255;
 					}
 
 					// Blue component
-					if( _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 2] + delta < 255 )
+					if( _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + 2] + delta < 255 )
 					{
-						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 2] += delta;
+						_editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + 2] += delta;
 					}
 					else
 					{
-						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 2] = 255;
+						_editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + 2] = 255;
 					}
 				}
 			}
@@ -466,37 +466,37 @@ void lowerValley( float changeIntensity )
 				float distance = sqrt( pow( x - _mousePosX, 2 ) + pow( y - _mousePosY, 2 ) );
 				if( distance <= _paintbrushRadius )
 				{
-					// Note that it's ( _imageHeight - y ) because when you pass the
+					// Note that it's ( _imageHeight - 1 - y ) because when you pass the
 					// pixel array to glTexSubImage2D, the vertical axis is flipped
 					unsigned char delta = (0.5)*changeIntensity * ( ( -distance / _paintbrushRadius ) + 1 );
 					// Red component
-					if( _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 0] - delta > 0 )
+					if( _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + 0] - delta > 0 )
 					{
-						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 0] -= delta;
+						_editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + 0] -= delta;
 					}
 					else
 					{
-						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 0] = 0;
+						_editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + 0] = 0;
 					}
 
 					// Green component
-					if( _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 1] - delta > 0 )
+					if( _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + 1] - delta > 0 )
 					{
-						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 1] -= delta;
+						_editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + 1] -= delta;
 					}
 					else
 					{
-						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 1] = 0;
+						_editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + 1] = 0;
 					}
 
 					// Blue component
-					if( _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 2] - delta > 0 )
+					if( _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + 2] - delta > 0 )
 					{
-						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 2] -= delta;
+						_editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + 2] -= delta;
 					}
 					else
 					{
-						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 2] = 0;
+						_editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + 2] = 0;
 					}
 				}
 			}
@@ -521,117 +521,117 @@ void twoPassGaussianBlur()
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x - 4 ) + i] * 0.05f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x - 4 ) + i] * 0.05f;
 				}
 			}
 			else
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.05f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] * 0.05f;
 				}
 			}
 			if( x - 3 >= 0 )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x - 3 ) + i] * 0.09f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x - 3 ) + i] * 0.09f;
 				}
 			}
 			else
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.09f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] * 0.09f;
 				}
 			}
 			if( x - 2 >= 0 )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x - 2 ) + i] * 0.12f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x - 2 ) + i] * 0.12f;
 				}
 			}
 			else
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.12f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] * 0.12f;
 				}
 			}
 			if( x - 1 >= 0 )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x - 1 ) + i] * 0.15f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x - 1 ) + i] * 0.15f;
 				}
 			}
 			else
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.15f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] * 0.15f;
 				}
 			}
 			// Center sample
 			for( int i = 0; i < 3; i++ )
 			{
-				sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.16f;
+				sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] * 0.16f;
 			}
 			if( x + 1 < _imageWidth )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x + 1 ) + i] * 0.15f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x + 1 ) + i] * 0.15f;
 				}
 			}
 			else
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.15f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] * 0.15f;
 				}
 			}
 			if( x + 2 < _imageWidth )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x + 2 ) + i] * 0.12f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x + 2 ) + i] * 0.12f;
 				}
 			}
 			else
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.12f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] * 0.12f;
 				}
 			}
 			if( x + 3 < _imageWidth )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x + 3 ) + i] * 0.09f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x + 3 ) + i] * 0.09f;
 				}
 			}
 			else
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.09f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] * 0.09f;
 				}
 			}
 			if( x + 4 < _imageWidth )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x + 4 ) + i] * 0.05f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x + 4 ) + i] * 0.05f;
 				}
 			}
 			else
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.05f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] * 0.05f;
 				}
 			}
 
@@ -640,11 +640,11 @@ void twoPassGaussianBlur()
 			{
 				if( sum[i] < 255 )
 				{
-					_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] = sum[i];
+					_editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] = sum[i];
 				}
 				else
 				{
-					_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] = 255;
+					_editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] = 255;
 				}
 			}
 		}
@@ -661,117 +661,117 @@ void twoPassGaussianBlur()
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - ( y - 4 ) ) * _imageWidth + x ) + i] * 0.05f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - ( y - 4 ) ) * _imageWidth + x ) + i] * 0.05f;
 				}
 			}
 			else
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.05f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] * 0.05f;
 				}
 			}
 			if( y - 3 >= 0 )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - ( y - 3 ) ) * _imageWidth + x ) + i] * 0.09f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - ( y - 3 ) ) * _imageWidth + x ) + i] * 0.09f;
 				}
 			}
 			else
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.09f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] * 0.09f;
 				}
 			}
 			if( y - 2 >= 0 )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - ( y - 2 ) ) * _imageWidth + x ) + i] * 0.12f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - ( y - 2 ) ) * _imageWidth + x ) + i] * 0.12f;
 				}
 			}
 			else
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.12f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] * 0.12f;
 				}
 			}
 			if( y - 1 >= 0 )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - ( y - 1 ) ) * _imageWidth + x ) + i] * 0.15f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - ( y - 1 ) ) * _imageWidth + x ) + i] * 0.15f;
 				}
 			}
 			else
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.15f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] * 0.15f;
 				}
 			}
 			// Center sample
 			for( int i = 0; i < 3; i++ )
 			{
-				sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.16f;
+				sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] * 0.16f;
 			}
 			if( y + 1 < _imageHeight )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - ( y + 1 ) ) * _imageWidth + x ) + i] * 0.15f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - ( y + 1 ) ) * _imageWidth + x ) + i] * 0.15f;
 				}
 			}
 			else
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.15f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] * 0.15f;
 				}
 			}
 			if( y + 2 < _imageHeight )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - ( y + 2 ) ) * _imageWidth + x ) + i] * 0.12f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - ( y + 2 ) ) * _imageWidth + x ) + i] * 0.12f;
 				}
 			}
 			else
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.12f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] * 0.12f;
 				}
 			}
 			if( y + 3 < _imageHeight )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - ( y + 3 ) ) * _imageWidth + x ) + i] * 0.09f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - ( y + 3 ) ) * _imageWidth + x ) + i] * 0.09f;
 				}
 			}
 			else
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.09f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] * 0.09f;
 				}
 			}
 			if( y + 4 < _imageHeight )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - ( y + 4 ) ) * _imageWidth + x ) + i] * 0.05f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - ( y + 4 ) ) * _imageWidth + x ) + i] * 0.05f;
 				}
 			}
 			else
 			{
 				for( int i = 0; i < 3; i++ )
 				{
-					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.05f;
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] * 0.05f;
 				}
 			}
 
@@ -780,11 +780,11 @@ void twoPassGaussianBlur()
 			{
 				if( sum[i] < 255 )
 				{
-					_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] = sum[i];
+					_editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] = sum[i];
 				}
 				else
 				{
-					_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] = 255;
+					_editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + i] = 255;
 				}
 			}
 		}
