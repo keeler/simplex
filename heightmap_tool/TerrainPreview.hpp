@@ -14,6 +14,7 @@ class TerrainPreview
 		void render() const;
 		float getHeight( int x, int z ) const { return mHeightMap[x * mWidth + z]; };
 		Vector3f getNormal( int x, int z ) const { return mNormals[x * mWidth + z]; };
+		float getHighestValue() const { return mHighestValue; };
 
 	private:
 		void computeNormals();
@@ -23,6 +24,7 @@ class TerrainPreview
 		int			mWidth;
 		int			mLength;
 		float		mHeightScale;
+		float		mHighestValue;
 };
 
 #endif
