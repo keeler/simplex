@@ -1,5 +1,7 @@
 #include "GL/glut.h"
+#include "../ImageLoader.hpp"
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <cmath>
 #include <stdlib.h>
@@ -26,7 +28,8 @@ int _mousePosY = DEFAULT_WINDOW_HEIGHT / 2;
 float _changeIntensity = 30.0f;
 unsigned char *_editImagePixels = NULL;		// Array of RGB triples
 unsigned int _editImageTextureId;
-bool _raiseHillMode = true;    // If not true, we're in lowerValley mode
+bool _raiseHillMode = true;		// If not true, we're in lowerValley mode
+bool _fileExists = false;		// Whether or not the file we're trying to load exists
 
 // OpenGL necessities
 void initRendering();
@@ -39,7 +42,7 @@ void handleMouseDrag( int x, int y );
 void handleMouseClick( int button, int state, int x, int y );
 void drawScene();
 // Helper functions
-void initializeEditImage();		// Only call after image width and height are determined, AND initRenering() has been called
+void initializeEditImage();		// Allocates and initializes a new blank image
 void cleanUp();
 void floodFill( int r, int g, int b );
 void raiseHill( float changeIntensity );
@@ -57,8 +60,21 @@ int main( int argc, char** argv )
 		exit( 1 );
 	}
 
+	_imageFilename = argv[1];
 	_imageWidth = atoi( argv[2] );
 	_imageHeight = atoi( argv[3] );
+
+	ifstream infile( _imageFilename.c_str() );
+	// If file already exists, open it for editing
+	if( infile )
+	{
+		_fileExists = true;
+		infile.close();
+	}
+	if( _fileExists )
+	{
+		loadBitmap( _imageFilename, _editImagePixels, _imageWidth, _imageHeight );
+	}
 
 	_mousePosX = _imageWidth / 2;
 	_mousePosY = _imageHeight / 2;
@@ -69,7 +85,21 @@ int main( int argc, char** argv )
 	
 	glutCreateWindow( "Heightmap Editor Tool" );
 	initRendering();
-	initializeEditImage();
+
+	// If the file didn't exist, and nothing was loaded in, initialize a blank slate
+	if( !_fileExists )
+	{
+		initializeEditImage();
+	}
+
+	// Create a texture for the image so we can map it onto a quad.
+	// This texture creation should only be done after initRendering() is called
+	// since that function enables GL_TEXTURE_RECTANGLE_ARB
+	glGenTextures( 1, &_editImageTextureId );
+	glBindTexture( GL_TEXTURE_RECTANGLE_ARB, _editImageTextureId );
+	glTexParameteri( GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexImage2D( GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGB, _imageWidth, _imageHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, _editImagePixels );
 
 	glutDisplayFunc( drawScene );
 	glutReshapeFunc( handleResize );
@@ -158,6 +188,10 @@ void handleKeyDown( unsigned char key, int x, int y )
 	{
 		_raiseHillMode = !_raiseHillMode;
 	}
+	if( key == 's' )
+	{
+		saveBitmap( _imageFilename, _editImagePixels, _imageWidth, _imageHeight );
+	}
 
 	_keyState[key] = true;
 }
@@ -235,12 +269,6 @@ void initializeEditImage()
 			}
 		}
 	}
-
-	glGenTextures( 1, &_editImageTextureId );
-	glBindTexture( GL_TEXTURE_RECTANGLE_ARB, _editImageTextureId );
-	glTexParameteri( GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-	glTexParameteri( GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	glTexImage2D( GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGB, _imageWidth, _imageHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, _editImagePixels );
 }
 
 void cleanUp()
