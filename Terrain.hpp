@@ -20,6 +20,7 @@ class Terrain
 		Vector3f getNormal( int x, int z ) const { return mNormals[x * mWidth + z]; };
 
 	private:
+		void buildDisplayList();
 		void computeNormals();
 
 		float		*mHeightMap;
@@ -27,6 +28,7 @@ class Terrain
 		int			mWidth;
 		int			mLength;
 
+		int			mDisplayListHandle;
 		Texture		*mTexture;
 };
 

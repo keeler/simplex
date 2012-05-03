@@ -27,6 +27,7 @@ Terrain::Terrain( const std::string & heightmapFilename, const std::string & tex
 	}
 
 	computeNormals();
+	buildDisplayList();
 }
 
 Terrain::~Terrain()
@@ -38,37 +39,46 @@ Terrain::~Terrain()
 
 void Terrain::render() const
 {
-	mTexture->bind();
+	glCallList( mDisplayListHandle );
+}
 
-	// Texturing quads (each of which is 2 triangles) is a lot easier than
-	// texturing triangles themselves. Texture a square group of quads, where
-	// the reciprocal of the delta below is the number of quads along one edge
-	// of the square.
-	float textureXCoord = 0.0f;
-	float textureYCoord = 0.0f;
-	float textureCoordDelta = 0.1f;
+void Terrain::buildDisplayList()
+{
+	mDisplayListHandle = glGenLists( 1 );
 
-	for( int z = 0; z < mLength - 1; z++ )
-	{
-		glBegin( GL_TRIANGLE_STRIP );
-		for( int x = 0; x < mWidth; x++ )
+	glNewList( mDisplayListHandle, GL_COMPILE );
+		mTexture->bind();
+
+		// Texturing quads (each of which is 2 triangles) is a lot easier than
+		// texturing triangles themselves. Texture a square group of quads, where
+		// the reciprocal of the delta below is the number of quads along one edge
+		// of the square.
+		float textureXCoord = 0.0f;
+		float textureYCoord = 0.0f;
+		float textureCoordDelta = 0.1f;
+
+		for( int z = 0; z < mLength - 1; z++ )
 		{
-			Vector3f normal = mNormals[x * mWidth + z];
-			glNormal3f( normal[0], normal[1], normal[2] );
-			glTexCoord2f( textureXCoord, textureYCoord );
-			glVertex3f( x, mHeightMap[mWidth * x + z], z );
+			glBegin( GL_TRIANGLE_STRIP );
+			for( int x = 0; x < mWidth; x++ )
+			{
+				Vector3f normal = mNormals[x * mWidth + z];
+				glNormal3f( normal[0], normal[1], normal[2] );
+				glTexCoord2f( textureXCoord, textureYCoord );
+				glVertex3f( x, mHeightMap[mWidth * x + z], z );
 
-			normal = mNormals[x * mWidth + ( z + 1 )];
-			glNormal3f( normal[0], normal[1], normal[2] );
-			glTexCoord2f( textureXCoord, textureYCoord + 0.25f );
-			glVertex3f( x, mHeightMap[mWidth * x + ( z + 1 )], z + 1 );
+				normal = mNormals[x * mWidth + ( z + 1 )];
+				glNormal3f( normal[0], normal[1], normal[2] );
+				glTexCoord2f( textureXCoord, textureYCoord + 0.25f );
+				glVertex3f( x, mHeightMap[mWidth * x + ( z + 1 )], z + 1 );
 
-			textureXCoord += textureCoordDelta;
+				textureXCoord += textureCoordDelta;
+			}
+			glEnd();
+
+			textureYCoord += textureCoordDelta;
 		}
-		glEnd();
-
-		textureYCoord += textureCoordDelta;
-	}
+	glEndList();
 }
 
 void Terrain::computeNormals()
