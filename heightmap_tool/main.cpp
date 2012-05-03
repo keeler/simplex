@@ -382,7 +382,7 @@ void floodFill( int r, int g, int b )
 		for( int y = _mousePosY - _paintbrushRadius; y < _mousePosY + _paintbrushRadius; y++ )
 		{
 			// Check to ensure we don't access something outside the image
-			if( x > 0 && x < _imageWidth && y > 0 && y < _imageHeight )
+			if( x >= 0 && x < _imageWidth && y >= 0 && y < _imageHeight )
 			{
 				float distanceSquared = ( x - _mousePosX ) * ( x - _mousePosX ) + ( y - _mousePosY ) * ( y - _mousePosY );
 				if( distanceSquared <= _paintbrushRadius * _paintbrushRadius )
@@ -408,7 +408,7 @@ void raiseHill( float changeIntensity )
 		for( int y = _mousePosY - _paintbrushRadius; y < _mousePosY + _paintbrushRadius; y++ )
 		{
 			// Check to ensure we don't access something outside the image
-			if( x > 0 && x < _imageWidth && y > 0 && y < _imageHeight )
+			if( x >= 0 && x < _imageWidth && y >= 0 && y < _imageHeight )
 			{
 				float distance = sqrt( pow( x - _mousePosX, 2 ) + pow( y - _mousePosY, 2 ) );
 				if( distance <= _paintbrushRadius )
@@ -417,13 +417,13 @@ void raiseHill( float changeIntensity )
 					// pixel array to glTexSubImage2D, the vertical axis is flipped
 					unsigned char delta = (0.5)*changeIntensity * ( ( -distance / _paintbrushRadius ) + 1 );
 					// Red component
-					if( _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 0] + delta < 255 )
+					if( _editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + 0] + delta < 255 )
 					{
-						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 0] += delta;
+						_editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + 0] += delta;
 					}
 					else
 					{
-						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 0] = 255;
+						_editImagePixels[3 * ( ( _imageHeight - 1 - y ) * _imageWidth + x ) + 0] = 255;
 					}
 
 					// Green component
@@ -461,7 +461,7 @@ void lowerValley( float changeIntensity )
 		for( int y = _mousePosY - _paintbrushRadius; y < _mousePosY + _paintbrushRadius; y++ )
 		{
 			// Check to ensure we don't access something outside the image
-			if( x > 0 && x < _imageWidth && y > 0 && y < _imageHeight )
+			if( x >= 0 && x < _imageWidth && y >= 0 && y < _imageHeight )
 			{
 				float distance = sqrt( pow( x - _mousePosX, 2 ) + pow( y - _mousePosY, 2 ) );
 				if( distance <= _paintbrushRadius )
@@ -517,7 +517,7 @@ void twoPassGaussianBlur()
 		{
 			// Take 9 samples, set current pixel to Gaussian average of these samples
 			float sum[3] = { 0 };    // One for r, g, and b
-			if( x - 4 > 0 )
+			if( x - 4 >= 0 )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
@@ -531,7 +531,7 @@ void twoPassGaussianBlur()
 					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.05f;
 				}
 			}
-			if( x - 3 > 0 )
+			if( x - 3 >= 0 )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
@@ -545,7 +545,7 @@ void twoPassGaussianBlur()
 					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.09f;
 				}
 			}
-			if( x - 2 > 0 )
+			if( x - 2 >= 0 )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
@@ -559,7 +559,7 @@ void twoPassGaussianBlur()
 					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.12f;
 				}
 			}
-			if( x - 1 > 0 )
+			if( x - 1 >= 0 )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
@@ -657,7 +657,7 @@ void twoPassGaussianBlur()
 		{
 			// Take 9 samples, set current pixel to Gaussian average of these samples
 			float sum[3] = { 0 };    // One for r, g, and b
-			if( y - 4 > 0 )
+			if( y - 4 >= 0 )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
@@ -671,7 +671,7 @@ void twoPassGaussianBlur()
 					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.05f;
 				}
 			}
-			if( y - 3 > 0 )
+			if( y - 3 >= 0 )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
@@ -685,7 +685,7 @@ void twoPassGaussianBlur()
 					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.09f;
 				}
 			}
-			if( y - 2 > 0 )
+			if( y - 2 >= 0 )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
@@ -699,7 +699,7 @@ void twoPassGaussianBlur()
 					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.12f;
 				}
 			}
-			if( y - 1 > 0 )
+			if( y - 1 >= 0 )
 			{
 				for( int i = 0; i < 3; i++ )
 				{
