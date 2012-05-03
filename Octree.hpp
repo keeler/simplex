@@ -1,9 +1,8 @@
 #ifndef OCTREE_HPP
 #define OCTREE_HPP
 
-#include "Vector3f.hpp"
+#include "Math.hpp"
 #include "OrientedBoundingBox.hpp"
-#include "Frustum.hpp"
 #include <iostream>
 #include <set>    // Akin to STL vector class
 #include <vector>

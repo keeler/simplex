@@ -1,8 +1,7 @@
 #ifndef ORIENTED_BOUNDING_BOX_HPP
 #define ORIENTED_BOUNDING_BOX_HPP
 
-#include "Vector3f.hpp"
-#include "Quaternion.hpp"
+#include "Math.hpp"
 #include <iostream>
 
 // Notes on orientation of corners and axes.

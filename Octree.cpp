@@ -1,5 +1,4 @@
 #include "Octree.hpp"
-#include "Plane.hpp"
 #include "GL/glut.h"
 
 Octree::Octree( const Vector3f & minCorner, const Vector3f & maxCorner )

@@ -1,5 +1,4 @@
 #include "OrientedBoundingBox.hpp"
-#include "Plane.hpp"
 #include <cmath>
 #include <cstdlib>
 #include <GL/glut.h>

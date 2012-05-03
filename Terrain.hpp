@@ -5,7 +5,7 @@
 #ifndef TERRAIN_HPP
 #define TERRAIN_HPP
 
-#include "Vector3f.hpp"
+#include "Math.hpp"
 #include "Texture.hpp"
 #include <string>
 

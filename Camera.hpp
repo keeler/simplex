@@ -1,9 +1,7 @@
 #ifndef CAMERA_HPP
 #define CAMERA_HPP
 
-#include "Vector3f.hpp"
-#include "Quaternion.hpp"
-#include "Frustum.hpp"
+#include "Math.hpp"
 
 class Camera
 {
