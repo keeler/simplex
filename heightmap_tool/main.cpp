@@ -1,5 +1,6 @@
 #include "GL/glut.h"
 #include "../ImageLoader.hpp"
+#include "TerrainPreview.hpp"
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -30,9 +31,13 @@ unsigned char *_editImagePixels = NULL;		// Array of RGB triples
 unsigned int _editImageTextureId;
 bool _raiseHillMode = true;		// If not true, we're in lowerValley mode
 bool _fileExists = false;		// Whether or not the file we're trying to load exists
+TerrainPreview *_myTerrainPreview = NULL;
+bool _previewMode = false;	// Start in edit mode
+float _terrainViewAngle = 0.0f;
 
 // OpenGL necessities
-void initRendering();
+void init2DRendering();
+void init3DRendering();
 void handleResize( int width, int height );
 void handleKeyDown( unsigned char key, int x, int y );
 void handleKeyUp( unsigned char key, int x, int y );
@@ -40,6 +45,7 @@ void handleKeyPress();
 void handleMouseMove( int x, int y );
 void handleMouseDrag( int x, int y );
 void handleMouseClick( int button, int state, int x, int y );
+void updateTerrainViewAngle( int value );
 void drawScene();
 // Helper functions
 void initializeEditImage();		// Allocates and initializes a new blank image
@@ -80,11 +86,11 @@ int main( int argc, char** argv )
 	_mousePosY = _imageHeight / 2;
 
 	glutInit( &argc, argv );
-	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB );
+	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
 	glutInitWindowSize( _imageWidth, _imageHeight );
 	
 	glutCreateWindow( "Heightmap Editor Tool" );
-	initRendering();
+	init2DRendering();    // Start in 2D editing mode
 
 	// If the file didn't exist, and nothing was loaded in, initialize a blank slate
 	if( !_fileExists )
@@ -92,8 +98,10 @@ int main( int argc, char** argv )
 		initializeEditImage();
 	}
 
+	_myTerrainPreview = new TerrainPreview( _imageWidth, _imageHeight, ( _imageWidth + _imageHeight ) / 5.0f );
+
 	// Create a texture for the image so we can map it onto a quad.
-	// This texture creation should only be done after initRendering() is called
+	// This texture creation should only be done after init2DRendering() is called
 	// since that function enables GL_TEXTURE_RECTANGLE_ARB
 	glGenTextures( 1, &_editImageTextureId );
 	glBindTexture( GL_TEXTURE_RECTANGLE_ARB, _editImageTextureId );
@@ -108,66 +116,128 @@ int main( int argc, char** argv )
 	glutPassiveMotionFunc( handleMouseMove );
 	glutMotionFunc( handleMouseDrag );
 	glutMouseFunc( handleMouseClick );
+	glutTimerFunc( 25, updateTerrainViewAngle, 0 );
 	
 	glutMainLoop();
 	return 0;
 }
 
-void initRendering()
+void init2DRendering()
 {
 	glDisable( GL_DEPTH_TEST );
 	glDisable( GL_LIGHTING );
 	glDepthMask( GL_TRUE );
 	glEnable( GL_TEXTURE_RECTANGLE_ARB );
-	glClearColor( 0.48f, 0.71f, 0.73f, 1.0f );
 	// Make it so mouse arrow cursor doesn't show in the window
 	glutSetCursor( GLUT_CURSOR_NONE );
 }
 
+void init3DRendering()
+{
+	glEnable( GL_DEPTH_TEST );
+	glEnable( GL_LIGHTING );
+	glEnable( GL_LIGHT0 );
+	glEnable( GL_NORMALIZE );
+	glEnable( GL_COLOR_MATERIAL );
+	glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
+}
+
 void handleResize( int width, int height )
 {
-	glViewport( 0, 0, width, height );
-	glMatrixMode( GL_PROJECTION );
-	glLoadIdentity();
-	glOrtho( 0, width, height, 0, -1, 1 );
-	glMatrixMode( GL_MODELVIEW );
+	// If not preview mode, we're in edit mode, so we want the screen
+	// to work in 2D
+	if( !_previewMode )
+	{
+		init2DRendering();
+		glViewport( 0, 0, width, height );
+		glMatrixMode( GL_PROJECTION );
+		glLoadIdentity();
+		glOrtho( 0, width, height, 0, -1, 1 );
+		glMatrixMode( GL_MODELVIEW );
+	}
+	// Otherwise, we're trying to preview the terrain, and we want to
+	// enable 3D viewpoint
+	else
+	{
+		init3DRendering();
+		glViewport( 0, 0, width, height );
+		glMatrixMode( GL_PROJECTION );
+		glLoadIdentity();
+		gluPerspective( 45.0, (float)width / (float)height, 1.0, 1000.0 );
+	}
+}
+
+void updateTerrainViewAngle( int value )
+{
+	_terrainViewAngle += 3.0f;
+	if( _terrainViewAngle > 360 )
+	{
+		_terrainViewAngle -= 360;
+	}
+
+	glutPostRedisplay();
+	glutTimerFunc( 25, updateTerrainViewAngle, 0 );
 }
 
 void drawScene()
 {
+	handleResize( _imageWidth, _imageHeight );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-	
 	glMatrixMode( GL_MODELVIEW );
-    glLoadIdentity();
+	glLoadIdentity();
 
 	handleKeyPress();
-	if( _mouseDown )
+
+	if( !_previewMode )
 	{
-		if( _raiseHillMode )
+		if( _mouseDown )
 		{
-			raiseHill( _changeIntensity );
+			if( _raiseHillMode )
+			{
+				raiseHill( _changeIntensity );
+			}
+			else
+			{
+				lowerValley( _changeIntensity );
+			}
 		}
-		else
-		{
-			lowerValley( _changeIntensity );
-		}
+
+		glColor3f( 1.0f, 1.0f, 1.0f );
+		glBindTexture( GL_TEXTURE_RECTANGLE_ARB, _editImageTextureId );
+		// Render the image on a quad
+		glBegin( GL_QUADS );
+			glTexCoord2i( 0, _imageWidth );                           
+			glVertex2i( 0, 0 );
+			glTexCoord2i( _imageWidth, _imageHeight );     
+			glVertex2i( _imageWidth, 0 );
+			glTexCoord2i( _imageWidth, 0 );    
+			glVertex2i( _imageWidth, _imageHeight );
+			glTexCoord2i( 0, 0 );          
+			glVertex2i( 0, _imageHeight );
+		glEnd();
+
+		drawCircularPaintbrush( _mousePosX, _mousePosY, _paintbrushRadius );
 	}
+	else
+	{
+		glTranslatef( 0.0f, 0.0f, -10.0f );
+		glRotatef( 30.0f, 1.0f, 0.0f, 0.0f );
+		glRotatef( -_terrainViewAngle, 0.0f, 1.0f, 0.0f );
+		
+		GLfloat ambientColor[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+		glLightModelfv( GL_LIGHT_MODEL_AMBIENT, ambientColor );
+		
+		GLfloat lightColor0[] = { 0.6f, 0.6f, 0.6f, 1.0f };
+		GLfloat lightPos0[] = { -0.5f, 100 + ( _imageWidth + _imageHeight ) / 5.0f, 0.1f, 0.0f };
+		glLightfv( GL_LIGHT0, GL_DIFFUSE, lightColor0 );
+		glLightfv( GL_LIGHT0, GL_POSITION, lightPos0 );
+		
+		float scale = 5.0f / max(_imageWidth - 1, _imageHeight - 1);
+		glScalef( scale, scale, scale );
+		glTranslatef( -(float)( _imageWidth - 1 ) / 2, 0.0f, -(float)( _imageHeight - 1 ) / 2 );
 
-	glColor3f( 1.0f, 1.0f, 1.0f );
-	glBindTexture( GL_TEXTURE_RECTANGLE_ARB, _editImageTextureId );
-	// Render the image on a quad
-	glBegin( GL_QUADS );
-		glTexCoord2i( 0, _imageWidth );                           
-		glVertex2i( 0, 0 );
-		glTexCoord2i( _imageWidth, _imageHeight );     
-		glVertex2i( _imageWidth, 0 );
-		glTexCoord2i( _imageWidth, 0 );    
-		glVertex2i( _imageWidth, _imageHeight );
-		glTexCoord2i( 0, 0 );          
-		glVertex2i( 0, _imageHeight );
-	glEnd();
-
-	drawCircularPaintbrush( _mousePosX, _mousePosY, _paintbrushRadius );
+		_myTerrainPreview->render();
+	}
 
 	glutSwapBuffers();
 }
@@ -180,17 +250,35 @@ void handleKeyDown( unsigned char key, int x, int y )
 		cleanUp();
 		exit( 1 );
 	}
+	// Blurr the image
 	if( key == 'b' )
 	{
 		twoPassGaussianBlur();
 	}
+	// Change the function of the paintbrush
 	if( key == 'm' )
 	{
 		_raiseHillMode = !_raiseHillMode;
 	}
+	// Save the image
 	if( key == 's' )
 	{
 		saveBitmap( _imageFilename, _editImagePixels, _imageWidth, _imageHeight );
+	}
+	if( key == 'p' )
+	{
+		// If in edit mode, change mode to show preview of terrain
+		if( !_previewMode )
+		{
+			init3DRendering();
+			_myTerrainPreview->setHeightmap( _editImagePixels );
+		}
+		else
+		{
+			init2DRendering();
+		}
+
+		_previewMode = !_previewMode;
 	}
 
 	_keyState[key] = true;
