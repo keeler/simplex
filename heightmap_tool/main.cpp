@@ -373,6 +373,10 @@ void cleanUp()
 	{
 		delete [] _editImagePixels;
 	}
+	if( _myTerrainPreview != NULL )
+	{
+		delete _myTerrainPreview;
+	}
 }
 
 void floodFill( int r, int g, int b )
