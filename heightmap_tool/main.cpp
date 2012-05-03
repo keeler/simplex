@@ -21,8 +21,10 @@ int _imageHeight = 0;
 string _imageFilename;
 int _mousePosX = DEFAULT_WINDOW_WIDTH / 2;
 int _mousePosY = DEFAULT_WINDOW_HEIGHT / 2;
-char *_editImagePixels = NULL;		// Array of RGB triples
+float _changeIntensity = 30.0f;
+unsigned char *_editImagePixels = NULL;		// Array of RGB triples
 unsigned int _editImageTextureId;
+bool _raiseHillMode = true;    // If not true, we're in lowerValley mode
 
 // OpenGL necessities
 void initRendering();
@@ -38,6 +40,9 @@ void drawScene();
 void initializeEditImage();		// Only call after image width and height are determined, AND initRenering() has been called
 void cleanUp();
 void floodFill( int r, int g, int b );
+void raiseHill( float changeIntensity );
+void lowerValley( float changeIntensity );
+void twoPassGaussianBlur();    // Blurs entire image
 void drawCircularPaintbrush( int xPos, int yPos, float radius );
 
 int main( int argc, char** argv )
@@ -104,6 +109,17 @@ void drawScene()
     glLoadIdentity();
 
 	handleKeyPress();
+	if( _mouseDown )
+	{
+		if( _raiseHillMode )
+		{
+			raiseHill( _changeIntensity );
+		}
+		else
+		{
+			lowerValley( _changeIntensity );
+		}
+	}
 
 	glColor3f( 1.0f, 1.0f, 1.0f );
 	glBindTexture( GL_TEXTURE_RECTANGLE_ARB, _editImageTextureId );
@@ -120,7 +136,7 @@ void drawScene()
 	glEnd();
 
 	drawCircularPaintbrush( _mousePosX, _mousePosY, _paintbrushRadius );
-	
+
 	glutSwapBuffers();
 }
 
@@ -129,7 +145,16 @@ void handleKeyDown( unsigned char key, int x, int y )
 	// Escape key
 	if( key == 27 )
 	{
+		cleanUp();
 		exit( 1 );
+	}
+	if( key == 'b' )
+	{
+		twoPassGaussianBlur();
+	}
+	if( key == 'm' )
+	{
+		_raiseHillMode = !_raiseHillMode;
 	}
 
 	_keyState[key] = true;
@@ -170,8 +195,6 @@ void handleMouseDrag( int x, int y )
 	_mousePosX = x;
 	_mousePosY = y;
 
-	floodFill( 255, 255, 255 );
-
 	glutPostRedisplay();
 }
 
@@ -180,14 +203,24 @@ void handleMouseClick( int button, int state, int x, int y )
 	_mousePosX = x;
 	_mousePosY = y;
 
-	floodFill( 255, 255, 255 );
+	if( button == GLUT_LEFT_BUTTON )
+	{
+		if( state == GLUT_DOWN )
+		{
+			_mouseDown = true;
+		}
+		else
+		{
+			_mouseDown = false;
+		}
+	}
 
 	glutPostRedisplay();
 }
 
 void initializeEditImage()
 {
-	_editImagePixels = new char[_imageWidth * _imageHeight * 3];
+	_editImagePixels = new unsigned char[_imageWidth * _imageHeight * 3];
 
 	srand( time( NULL ) );
 
@@ -226,9 +259,10 @@ void floodFill( int r, int g, int b )
 			// Check to ensure we don't access something outside the image
 			if( x > 0 && x < _imageWidth && y > 0 && y < _imageHeight )
 			{
-				if( ( ( x - _mousePosX ) * ( x - _mousePosX ) + ( y - _mousePosY ) * ( y - _mousePosY ) ) <= _paintbrushRadius * _paintbrushRadius )
+				float distanceSquared = ( x - _mousePosX ) * ( x - _mousePosX ) + ( y - _mousePosY ) * ( y - _mousePosY );
+				if( distanceSquared <= _paintbrushRadius * _paintbrushRadius )
 				{
-					// Note that it's ( _imageHeight - _mousePosY ) because when you pass the
+					// Note that it's ( _imageHeight - y ) because when you pass the
 					// pixel array to glTexSubImage2D, the vertical axis is flipped
 					_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 0] = r;
 					_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 1] = g;
@@ -238,6 +272,400 @@ void floodFill( int r, int g, int b )
 		}
 	}
 
+	glBindTexture( GL_TEXTURE_RECTANGLE_ARB, _editImageTextureId );
+	glTexSubImage2D( GL_TEXTURE_RECTANGLE_ARB, 0, 0, 0, _imageWidth, _imageHeight, GL_RGB, GL_UNSIGNED_BYTE, _editImagePixels );
+}
+
+void raiseHill( float changeIntensity )
+{
+	for( int x = _mousePosX - _paintbrushRadius; x < _mousePosX + _paintbrushRadius; x++ )
+	{
+		for( int y = _mousePosY - _paintbrushRadius; y < _mousePosY + _paintbrushRadius; y++ )
+		{
+			// Check to ensure we don't access something outside the image
+			if( x > 0 && x < _imageWidth && y > 0 && y < _imageHeight )
+			{
+				float distance = sqrt( pow( x - _mousePosX, 2 ) + pow( y - _mousePosY, 2 ) );
+				if( distance <= _paintbrushRadius )
+				{
+					// Note that it's ( _imageHeight - y ) because when you pass the
+					// pixel array to glTexSubImage2D, the vertical axis is flipped
+					unsigned char delta = (0.5)*changeIntensity * ( ( -distance / _paintbrushRadius ) + 1 );
+					// Red component
+					if( _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 0] + delta < 255 )
+					{
+						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 0] += delta;
+					}
+					else
+					{
+						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 0] = 255;
+					}
+
+					// Green component
+					if( _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 1] + delta < 255 )
+					{
+						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 1] += delta;
+					}
+					else
+					{
+						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 1] = 255;
+					}
+
+					// Blue component
+					if( _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 2] + delta < 255 )
+					{
+						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 2] += delta;
+					}
+					else
+					{
+						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 2] = 255;
+					}
+				}
+			}
+		}
+	}
+
+	glBindTexture( GL_TEXTURE_RECTANGLE_ARB, _editImageTextureId );
+	glTexSubImage2D( GL_TEXTURE_RECTANGLE_ARB, 0, 0, 0, _imageWidth, _imageHeight, GL_RGB, GL_UNSIGNED_BYTE, _editImagePixels );
+}
+
+void lowerValley( float changeIntensity )
+{
+	for( int x = _mousePosX - _paintbrushRadius; x < _mousePosX + _paintbrushRadius; x++ )
+	{
+		for( int y = _mousePosY - _paintbrushRadius; y < _mousePosY + _paintbrushRadius; y++ )
+		{
+			// Check to ensure we don't access something outside the image
+			if( x > 0 && x < _imageWidth && y > 0 && y < _imageHeight )
+			{
+				float distance = sqrt( pow( x - _mousePosX, 2 ) + pow( y - _mousePosY, 2 ) );
+				if( distance <= _paintbrushRadius )
+				{
+					// Note that it's ( _imageHeight - y ) because when you pass the
+					// pixel array to glTexSubImage2D, the vertical axis is flipped
+					unsigned char delta = (0.5)*changeIntensity * ( ( -distance / _paintbrushRadius ) + 1 );
+					// Red component
+					if( _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 0] - delta > 0 )
+					{
+						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 0] -= delta;
+					}
+					else
+					{
+						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 0] = 0;
+					}
+
+					// Green component
+					if( _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 1] - delta > 0 )
+					{
+						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 1] -= delta;
+					}
+					else
+					{
+						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 1] = 0;
+					}
+
+					// Blue component
+					if( _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 2] - delta > 0 )
+					{
+						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 2] -= delta;
+					}
+					else
+					{
+						_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + 2] = 0;
+					}
+				}
+			}
+		}
+	}
+
+	glBindTexture( GL_TEXTURE_RECTANGLE_ARB, _editImageTextureId );
+	glTexSubImage2D( GL_TEXTURE_RECTANGLE_ARB, 0, 0, 0, _imageWidth, _imageHeight, GL_RGB, GL_UNSIGNED_BYTE, _editImagePixels );
+}
+
+// Blurs entire image using two-pass Gaussian blur (kind of?)
+void twoPassGaussianBlur()
+{
+	// Blur horizontally for each row
+	for( int y = 0; y < _imageHeight; y++ )
+	{
+		for( int x = 0; x < _imageWidth; x++ )
+		{
+			// Take 9 samples, set current pixel to Gaussian average of these samples
+			float sum[3] = { 0 };    // One for r, g, and b
+			if( x - 4 > 0 )
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x - 4 ) + i] * 0.05f;
+				}
+			}
+			else
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.05f;
+				}
+			}
+			if( x - 3 > 0 )
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x - 3 ) + i] * 0.09f;
+				}
+			}
+			else
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.09f;
+				}
+			}
+			if( x - 2 > 0 )
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x - 2 ) + i] * 0.12f;
+				}
+			}
+			else
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.12f;
+				}
+			}
+			if( x - 1 > 0 )
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x - 1 ) + i] * 0.15f;
+				}
+			}
+			else
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.15f;
+				}
+			}
+			// Center sample
+			for( int i = 0; i < 3; i++ )
+			{
+				sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.16f;
+			}
+			if( x + 1 < _imageWidth )
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x + 1 ) + i] * 0.15f;
+				}
+			}
+			else
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.15f;
+				}
+			}
+			if( x + 2 < _imageWidth )
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x + 2 ) + i] * 0.12f;
+				}
+			}
+			else
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.12f;
+				}
+			}
+			if( x + 3 < _imageWidth )
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x + 3 ) + i] * 0.09f;
+				}
+			}
+			else
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.09f;
+				}
+			}
+			if( x + 4 < _imageWidth )
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x + 4 ) + i] * 0.05f;
+				}
+			}
+			else
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.05f;
+				}
+			}
+
+			// Set the value of the pixel
+			for( int i = 0; i < 3; i++ )
+			{
+				if( sum[i] < 255 )
+				{
+					_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] = sum[i];
+				}
+				else
+				{
+					_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] = 255;
+				}
+			}
+		}
+	}
+
+	// Blur vertically for each column
+	for( int x = 0; x < _imageWidth; x++ )
+	{
+		for( int y = 0; y < _imageHeight; y++ )
+		{
+			// Take 9 samples, set current pixel to Gaussian average of these samples
+			float sum[3] = { 0 };    // One for r, g, and b
+			if( y - 4 > 0 )
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - ( y - 4 ) ) * _imageWidth + x ) + i] * 0.05f;
+				}
+			}
+			else
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.05f;
+				}
+			}
+			if( y - 3 > 0 )
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - ( y - 3 ) ) * _imageWidth + x ) + i] * 0.09f;
+				}
+			}
+			else
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.09f;
+				}
+			}
+			if( y - 2 > 0 )
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - ( y - 2 ) ) * _imageWidth + x ) + i] * 0.12f;
+				}
+			}
+			else
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.12f;
+				}
+			}
+			if( y - 1 > 0 )
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - ( y - 1 ) ) * _imageWidth + x ) + i] * 0.15f;
+				}
+			}
+			else
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.15f;
+				}
+			}
+			// Center sample
+			for( int i = 0; i < 3; i++ )
+			{
+				sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.16f;
+			}
+			if( y + 1 < _imageHeight )
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - ( y + 1 ) ) * _imageWidth + x ) + i] * 0.15f;
+				}
+			}
+			else
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.15f;
+				}
+			}
+			if( y + 2 < _imageHeight )
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - ( y + 2 ) ) * _imageWidth + x ) + i] * 0.12f;
+				}
+			}
+			else
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.12f;
+				}
+			}
+			if( y + 3 < _imageHeight )
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - ( y + 3 ) ) * _imageWidth + x ) + i] * 0.09f;
+				}
+			}
+			else
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.09f;
+				}
+			}
+			if( y + 4 < _imageHeight )
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - ( y + 4 ) ) * _imageWidth + x ) + i] * 0.05f;
+				}
+			}
+			else
+			{
+				for( int i = 0; i < 3; i++ )
+				{
+					sum[i] += _editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] * 0.05f;
+				}
+			}
+
+			// Set the value of the pixel
+			for( int i = 0; i < 3; i++ )
+			{
+				if( sum[i] < 255 )
+				{
+					_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] = sum[i];
+				}
+				else
+				{
+					_editImagePixels[3 * ( ( _imageHeight - y ) * _imageWidth + x ) + i] = 255;
+				}
+			}
+		}
+	}
+
+	// Apply the blurred image
 	glBindTexture( GL_TEXTURE_RECTANGLE_ARB, _editImageTextureId );
 	glTexSubImage2D( GL_TEXTURE_RECTANGLE_ARB, 0, 0, 0, _imageWidth, _imageHeight, GL_RGB, GL_UNSIGNED_BYTE, _editImagePixels );
 }
