@@ -117,6 +117,13 @@ int main( int argc, char** argv )
 	glutMotionFunc( handleMouseDrag );
 	glutMouseFunc( handleMouseClick );
 	glutTimerFunc( 25, updateTerrainViewAngle, 0 );
+
+	cout << "Controls:" << endl;
+	cout << "\tm :: Toggle hill-making mode/valley-making mode." << endl;
+	cout << "\tb :: Blur the image (makes terrain smoother)." << endl;
+	cout << "\tp :: Toggle edit mode/terrain preview mode." << endl;
+	cout << "\ts :: Save the image to filename supplied at startup." << endl;
+	cout << "\tscroll-wheel :: Increase/decrease paintbrush radius." << endl;
 	
 	glutMainLoop();
 	return 0;
@@ -254,6 +261,7 @@ void handleKeyDown( unsigned char key, int x, int y )
 	if( key == 'b' )
 	{
 		twoPassGaussianBlur();
+		_myTerrainPreview->setHeightmap( _editImagePixels );
 	}
 	// Change the function of the paintbrush
 	if( key == 'm' )
