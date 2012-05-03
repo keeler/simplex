@@ -4,13 +4,15 @@
 #include <cmath>
 #include <stdlib.h>
 #include <cstdlib>
-#include "../Texture.hpp"
 using namespace std;
 
 #define PI 3.14159265f
 
 #define DEFAULT_WINDOW_WIDTH 400
 #define DEFAULT_WINDOW_HEIGHT 400
+
+#define GLUT_SCROLL_UP 3
+#define GLUT_SCROLL_DOWN 4
 
 // Globals
 bool _keyState[256] = { false };    // Assume no keys pressed at first
@@ -167,18 +169,6 @@ void handleKeyUp( unsigned char key, int x, int y )
 
 void handleKeyPress()
 {
-	if( _keyState['w'] )
-	{
-		_paintbrushRadius += 1.0f;
-	}
-	if( _keyState['s'] )
-	{
-		if( _paintbrushRadius >= 1.0f )
-		{
-			_paintbrushRadius -= 1.0f;
-		}
-	}
-
 	glutPostRedisplay();
 }
 
@@ -212,6 +202,17 @@ void handleMouseClick( int button, int state, int x, int y )
 		else
 		{
 			_mouseDown = false;
+		}
+	}
+	else if( button == GLUT_SCROLL_UP )
+	{
+		_paintbrushRadius += 2.0f;
+	}
+	else if( button == GLUT_SCROLL_DOWN )
+	{
+		if( _paintbrushRadius >= 2.0f )
+		{
+			_paintbrushRadius -= 2.0f;
 		}
 	}
 
@@ -382,7 +383,7 @@ void lowerValley( float changeIntensity )
 	glTexSubImage2D( GL_TEXTURE_RECTANGLE_ARB, 0, 0, 0, _imageWidth, _imageHeight, GL_RGB, GL_UNSIGNED_BYTE, _editImagePixels );
 }
 
-// Blurs entire image using two-pass Gaussian blur (kind of?)
+// Blurs entire image using two-pass Gaussian blur (using standard deviation of 2.7)
 void twoPassGaussianBlur()
 {
 	// Blur horizontally for each row
