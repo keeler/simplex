@@ -37,6 +37,7 @@ struct BmpInfoHeader
 ////////////////////////////////////////////////////////////////////////////////
 // Image Format Loader Functions
 ////////////////////////////////////////////////////////////////////////////////
-void loadBitmap( const std::string & filename, char *& pixels, int & width, int & height );
+void loadBitmap( const std::string & filename, unsigned char *& pixels, int & width, int & height );
+void saveBitmap( const std::string & filename, unsigned char *pixels, int width, int height );
 
 #endif

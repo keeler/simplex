@@ -17,7 +17,7 @@ Texture::~Texture()
 
 void Texture::loadBmp( const std::string & filename )
 {
-	char *pixels = NULL;
+	unsigned char *pixels = NULL;
 	int width;
 	int height;
 

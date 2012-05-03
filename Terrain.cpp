@@ -11,7 +11,7 @@ Terrain::Terrain( const std::string & heightmapFilename, const std::string & tex
 {
 	mTexture = new Texture( textureFilename );
 
-	char *pixels = NULL;
+	unsigned char *pixels = NULL;
 	loadBitmap( heightmapFilename, pixels, mWidth, mLength );
 
 	mHeightMap = new float[mWidth * mLength];
@@ -20,7 +20,7 @@ Terrain::Terrain( const std::string & heightmapFilename, const std::string & tex
 		for( int x = 0; x < mWidth; x++ )
 		{
 			// Only need one channel, arbitrarily take red channel
-			unsigned char color = (unsigned char)pixels[3 * ( mWidth * x + z )];
+			unsigned char color = pixels[3 * ( mWidth * x + z )];
 			// Varies from - height / 2 to height / 2
 			mHeightMap[mWidth * x + z] = heightScale * ( ( color / 255.0f ) - 0.5f );
 		}

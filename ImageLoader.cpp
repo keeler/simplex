@@ -3,7 +3,7 @@
 #include <fstream>
 #include <cmath>
 
-void loadBitmap( const std::string & filename, char *& pixels, int & width, int & height )
+void loadBitmap( const std::string & filename, unsigned char *& pixels, int & width, int & height )
 {
 	std::ifstream infile;
 
@@ -40,7 +40,7 @@ void loadBitmap( const std::string & filename, char *& pixels, int & width, int 
 	infile.read( rawPixelData, pixelArraySize );
 
 	// Allocate the array that OpenGL expects, and transform the raw data into the format OpenGL wants
-	pixels = new char[width * height * 3];    // Array of pixels, each with three values, R, G, and B
+	pixels = new unsigned char[width * height * 3];    // Array of pixels, each with three values, R, G, and B
 	for( int y = 0; y < height; y++ )
 	{
 		for( int x = 0; x < width; x++ )
