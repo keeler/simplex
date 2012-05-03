@@ -2,7 +2,7 @@ CC = g++
 CFLAGS = -Wall -g
 PROG = main
 
-SRCS = main.cpp TerrainPreview.cpp ../ImageLoader.cpp ../Vector3f.cpp
+SRCS = main.cpp TerrainPreview.cpp ../ImageLoader.cpp ../Math.cpp
 
 LIBS = -lglut -lGLU
 

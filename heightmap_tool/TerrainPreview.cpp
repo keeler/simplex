@@ -1,6 +1,5 @@
 #include "TerrainPreview.hpp"
 #include "../Texture.hpp"
-#include "../Vector3f.hpp"
 #include "GL/glut.h"
 
 TerrainPreview::TerrainPreview( int width, int height, const float heightScale ) :
