@@ -71,11 +71,25 @@ void Window::handleResize( int width, int height )
 void Window::handleKeyDown( unsigned char key, int x, int y )
 {
 	Event event;
-	memset( &event, -1, sizeof( Event ) );
+	memset( &event, 0, sizeof( Event ) );
 
 	event.type = KEY_DOWN;
 	event.key.keyCode = ASCII_KEY;
 	event.key.asciiCode = key;
+
+	int mod = glutGetModifiers();
+	if( ( mod & GLUT_ACTIVE_CTRL ) != 0 )
+	{
+		event.key.ctrlPressed = true;
+	}
+	if( ( mod & GLUT_ACTIVE_ALT ) != 0 )
+	{
+		event.key.altPressed = true;
+	}
+	if( ( mod & GLUT_ACTIVE_SHIFT ) != 0 )
+	{
+		event.key.shiftPressed = true;
+	}
 
 	eventQueue.push( event );
 	glutPostRedisplay();
@@ -84,7 +98,7 @@ void Window::handleKeyDown( unsigned char key, int x, int y )
 void Window::handleSpecialKey( int key, int x, int y )
 {
 	Event event;
-	memset( &event, -1, sizeof( Event ) );
+	memset( &event, 0, sizeof( Event ) );
 
 	event.type = KEY_DOWN;
 	switch( key )
@@ -154,6 +168,20 @@ void Window::handleSpecialKey( int key, int x, int y )
 			break;
 	}
 
+	int mod = glutGetModifiers();
+	if( ( mod & GLUT_ACTIVE_CTRL ) != 0 )
+	{
+		event.key.ctrlPressed = true;
+	}
+	if( ( mod & GLUT_ACTIVE_ALT ) != 0 )
+	{
+		event.key.altPressed = true;
+	}
+	if( ( mod & GLUT_ACTIVE_SHIFT ) != 0 )
+	{
+		event.key.shiftPressed = true;
+	}
+
 	eventQueue.push( event );
 	glutPostRedisplay();
 }
@@ -161,7 +189,7 @@ void Window::handleSpecialKey( int key, int x, int y )
 void Window::handleKeyUp( unsigned char key, int x, int y )
 {
 	Event event;
-	memset( &event, -1, sizeof( Event ) );
+	memset( &event, 0, sizeof( Event ) );
 
 	event.type = KEY_UP;
 	event.key.keyCode = ASCII_KEY;
@@ -174,7 +202,7 @@ void Window::handleKeyUp( unsigned char key, int x, int y )
 void Window::handleMouseMove( int x, int y )
 {
 	Event event;
-	memset( &event, -1, sizeof( Event ) );
+	memset( &event, 0, sizeof( Event ) );
 
 	event.type = MOUSE_MOVE;
 	event.mousePosX = x;
@@ -187,7 +215,7 @@ void Window::handleMouseMove( int x, int y )
 void Window::handleMouseDrag( int x, int y )
 {
 	Event event;
-	memset( &event, -1, sizeof( Event ) );
+	memset( &event, 0, sizeof( Event ) );
 
 	event.type = MOUSE_MOVE;
 	event.mousePosX= x;
@@ -200,7 +228,7 @@ void Window::handleMouseDrag( int x, int y )
 void Window::handleMouseClick( int button, int state, int x, int y )
 {
 	Event event;
-	memset( &event, -1, sizeof( Event ) );
+	memset( &event, 0, sizeof( Event ) );
 
 	event.mousePosX = x;
 	event.mousePosY = y;

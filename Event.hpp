@@ -51,6 +51,9 @@ struct KeyEvent
 {
 	KeyCode			keyCode;
 	unsigned char	asciiCode;
+	bool			altPressed;
+	bool			ctrlPressed;
+	bool			shiftPressed;
 };
 
 struct Event
