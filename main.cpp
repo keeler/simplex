@@ -73,8 +73,6 @@ void handleEvents()
 	{
 		_myCamera->rotatePitch( 0.5f );
 	}
-
-	glutPostRedisplay();
 }
 
 void Window::renderScene()

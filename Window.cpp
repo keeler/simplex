@@ -19,6 +19,7 @@ Window::Window( unsigned int width, unsigned int height, const std::string & tit
 
 	glutReshapeFunc( Window::handleResize );
 	glutDisplayFunc( Window::renderScene );
+	glutIdleFunc( Window::renderScene );
 	glutKeyboardFunc( Window::handleKeyDown );
 	glutKeyboardUpFunc( Window::handleKeyUp );
 	glutSpecialFunc( Window::handleSpecialKeyDown );
@@ -93,7 +94,6 @@ void Window::handleKeyDown( unsigned char key, int x, int y )
 	}
 
 	eventQueue.push( event );
-	glutPostRedisplay();
 }
 
 void Window::handleKeyUp( unsigned char key, int x, int y )
@@ -106,7 +106,6 @@ void Window::handleKeyUp( unsigned char key, int x, int y )
 	event.key.asciiCode = key;
 
 	eventQueue.push( event );
-	glutPostRedisplay();
 }
 
 void Window::handleSpecialKeyDown( int key, int x, int y )
@@ -197,7 +196,6 @@ void Window::handleSpecialKeyDown( int key, int x, int y )
 	}
 
 	eventQueue.push( event );
-	glutPostRedisplay();
 }
 
 void Window::handleSpecialKeyUp( int key, int x, int y )
@@ -288,7 +286,6 @@ void Window::handleSpecialKeyUp( int key, int x, int y )
 	}
 
 	eventQueue.push( event );
-	glutPostRedisplay();
 }
 
 void Window::handleMouseMove( int x, int y )
@@ -301,7 +298,6 @@ void Window::handleMouseMove( int x, int y )
 	event.mousePosY = y;
 
 	eventQueue.push( event );
-	glutPostRedisplay();
 }
 
 void Window::handleMouseDrag( int x, int y )
@@ -314,7 +310,6 @@ void Window::handleMouseDrag( int x, int y )
 	event.mousePosY = y;
 
 	eventQueue.push( event );
-	glutPostRedisplay();
 }
 
 void Window::handleMouseClick( int button, int state, int x, int y )
@@ -354,5 +349,4 @@ void Window::handleMouseClick( int button, int state, int x, int y )
 	}
 
 	eventQueue.push( event );
-	glutPostRedisplay();
 }
