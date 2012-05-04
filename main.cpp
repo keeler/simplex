@@ -1,7 +1,9 @@
-#include "Vector3f.hpp"
+#include "Math.hpp"
 #include "OrientedBoundingBox.hpp"
 #include "Octree.hpp"
 #include "Camera.hpp"
+#include "Terrain.hpp"
+#include "Window.hpp"
 #include <iostream>
 #include <cmath>
 #include <stdlib.h>
@@ -9,296 +11,101 @@
 #include "GL/glut.h"
 using namespace std;
 
-// Should be anything more than 20, see lines 29-31, NUM_BOXES/20
-const int NUM_BOXES = 500;
+#include <iostream>
+#include <stdlib.h>
 
 bool keyState[256] = { false };
+Terrain *_myTerrain;
+Camera *_myCamera;
+Window *_myWindow;
 
-// For mouse motion
-bool _mouseWarped = false;
-float _mouseSensitivity = 0.1f;
-
-int _index = 0;
-float _angle = 30.0f;
-
-bool _useCamera = true;
-
-OrientedBoundingBox * _myBoxes;
-Vector3f * _rotationVectors;
-float * _rotationRates;
-
-Octree * _myOctree;
-Camera * _myCamera;
-
-void generateBoxes()
+void handleEvents()
 {
-    _myBoxes = new OrientedBoundingBox[NUM_BOXES];
-
-    Vector3f center;
-    Vector3f edgeHalfLengths;
-    Quaternion defaultOrientation;
-
-    srand( time( NULL ) );
-    for( int i = 0; i < NUM_BOXES; i++ )
-    {
-        center = Vector3f( (rand()%2?-1.0f:1.0f)*(rand()%(NUM_BOXES/10))/1.0,
-                           (rand()%2?-1.0f:1.0f)*(rand()%(NUM_BOXES/10))/1.0,
-                           (rand()%2?-1.0f:1.0f)*(rand()%(NUM_BOXES/10))/1.0 );
-        edgeHalfLengths = Vector3f( 0.5f, 1.0f, 2.0f );
-
-        _myBoxes[i] = OrientedBoundingBox( center, edgeHalfLengths, defaultOrientation );
-    }
-}
-
-void generateRotationVectors()
-{
-    _rotationVectors = new Vector3f[NUM_BOXES];
-    _rotationRates = new float[NUM_BOXES];
-
-    for( int i = 0; i < NUM_BOXES; i++ )
-    {
-        _rotationVectors[i] = Vector3f( (rand()%2?-1.0f:1.0f)*(rand()%5)/1.0, (rand()%2?-1.0f:1.0f)*(rand()%5)/1.0, 0.0f );
-        _rotationRates[i] = (rand()%7+3)/1.0;
-    }
-}
-
-void keyDown( unsigned char key, int x, int y )
-{
-	if( key == 27 )
+	Event event;
+	while( _myWindow->getEvent( event ) )
 	{
-        delete [] _myBoxes;
-        delete [] _rotationVectors;
-        delete [] _rotationRates;
-        delete _myOctree;
-		delete _myCamera;
-		exit( 1 );
-	}
-	if( key == 'c' )
-	{
-		_useCamera = !_useCamera;
+		if( event.type == KEY_DOWN && event.key.keyCode == ASCII_KEY )
+		{
+			if( event.key.asciiCode == 27 )
+			{
+				delete _myTerrain;
+				delete _myCamera;
+				delete _myWindow;
+				exit( 1 );
+			}
+			keyState[event.key.asciiCode] = true;
+		}
+		else if( event.type == KEY_UP && event.key.keyCode == ASCII_KEY )
+		{
+			keyState[event.key.asciiCode] = false;
+		}
 	}
 
-	keyState[ key ] = true;
-}
-
-void keyUp( unsigned char key, int x, int y )
-{
-	keyState[ key ] = false;
-}
-
-void handleKeyPress()
-{
 	if( keyState['w'] )
 	{
-		_myCamera->moveForward( 5.0f );
+		_myCamera->moveForward( 2.5f );
 	}
 	if( keyState['s'] )
 	{
-		_myCamera->moveBackward( 5.0f );
+		_myCamera->moveBackward( 2.5f );
 	}
 	if( keyState['a'] )
 	{
-		_myCamera->moveLeft( 5.0f );
+		_myCamera->moveLeft( 2.5f );
 	}
 	if( keyState['d'] )
 	{
-		_myCamera->moveRight( 5.0f );
-    }
-
-    if( keyState['j'] )
+		_myCamera->moveRight( 2.5f );
+	}
+	if( keyState['j'] )
 	{
 		_myCamera->rotateYaw( -0.5f );
-    }
-    if( keyState['l'] )
+	}
+	if( keyState['l'] )
 	{
 		_myCamera->rotateYaw( 0.5f );
-    }
-    if( keyState['i'] )
+	}
+	if( keyState['i'] )
 	{
 		_myCamera->rotatePitch( -0.5f );
-    }
-    if( keyState['k'] )
+	}
+	if( keyState['k'] )
 	{
 		_myCamera->rotatePitch( 0.5f );
-    }
-    
-
-	glutPostRedisplay();
-}
-
-void mouseMove( int x, int y )
-{
-	int width = glutGet( GLUT_WINDOW_WIDTH );
-	int height = glutGet( GLUT_WINDOW_HEIGHT );
-
-	if( !_mouseWarped )
-	{
-		int deltaX = x - width / 2;
-		int deltaY = y - height / 2;
-
-		_myCamera->rotateYaw( _mouseSensitivity * deltaX );
-		_myCamera->rotatePitch( _mouseSensitivity * deltaY );
-
-		glutWarpPointer( width / 2, height / 2 );
-		_mouseWarped = true;
-	}
-	else
-	{
-		_mouseWarped = false;
 	}
 
 	glutPostRedisplay();
 }
 
-void initRendering()
+void Window::renderScene()
 {
-    // Makes shit render in 3d, man
-    glEnable( GL_DEPTH_TEST );
-	glEnable( GL_COLOR_MATERIAL );    // Allows us to color polygons
-
-    // Use back-face culling
-    glCullFace( GL_BACK );
-
-    glEnable( GL_LIGHTING );    // Allows us to use light
-	glEnable( GL_LIGHT0 );
-
-    glShadeModel( GL_SMOOTH );
-
-	// Make it so mouse doesn't show up when we move around
-	glutSetCursor( GLUT_CURSOR_NONE ); 
-}
-
-void handleResize( int width, int height )
-{
-    // Tells OpenGL how to convert from coordinates to pixel values
-    glViewport( 0, 0, width, height );
-    // Switch to setting the camera perspective
-    glMatrixMode( GL_PROJECTION );
-    // Set the camera perspective
-    glLoadIdentity();    // Reset the camera
-    _myCamera->perspective( 45.0, (double)width / (double)height, 1.0, 1000.0 );
-}
-
-void drawScene()
-{
-    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-    glMatrixMode( GL_MODELVIEW );
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	
+	glMatrixMode( GL_MODELVIEW );
     glLoadIdentity();
 
-	handleKeyPress();
-
-	if( _useCamera )
-	{
-		_myCamera->look();
-	}
-	else
-	{
-		glRotatef( 90, 0.0f, 1.0f, 0.0f );
-		glTranslatef( 0.0f, 0.0f, -500 );
-	}
-	// Add positioned light 0
-	GLfloat lightColor0[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	GLfloat lightPos0[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	glLightfv( GL_LIGHT0, GL_DIFFUSE, lightColor0 );
-	glLightfv( GL_LIGHT0, GL_POSITION, lightPos0 );
-
-	//_myOctree->draw( Vector3f( 1.0f, 1.0f, 1.0f ) );
-	Frustum cameraFrustum = _myCamera->getFrustum();
-	//cameraFrustum.draw( Vector3f( 1.0f, 1.0f, 1.0f ) );
-
-    vector<BoxPair> collisionPairs;
-    _myOctree->getPotentialCollisionPairs( collisionPairs );
-	unsigned int numCollisionPairs = collisionPairs.size();
-    for( unsigned int i = 0; i < numCollisionPairs; i++ )
-    {
-        if( collisionPairs[i].box1->collisionWith( *collisionPairs[i].box2 ) )
-        {
-            collisionPairs[i].box1->setCollisionState( true );
-            collisionPairs[i].box2->setCollisionState( true );
-        }
-    }
-
-	vector<OrientedBoundingBox *> visibleBoxes;
-	_myOctree->getBoxesWithinFrustum( cameraFrustum, visibleBoxes );
-	// Draw the boxes in the frustum
-	for( std::vector<OrientedBoundingBox *>::iterator it = visibleBoxes.begin();
-         it != visibleBoxes.end();
-         ++it )
-    {
-    	if( ( *it )->getCollisionState() == true )
-    	{
-    		( *it )->draw( Vector3f( 1.0f, 0.0f, 0.0f ) );
-        }
-        else
-        {
-			( *it )->draw( Vector3f( 0.0f, 0.0f, 1.0f ) );
-        }
-    }
-
-	// Reset the collided ones collision state to false
-    for( unsigned int i = 0; i < numCollisionPairs; i++ )
-    {
-        collisionPairs[i].box1->setCollisionState( false );
-        collisionPairs[i].box2->setCollisionState( false );
-    }
-
-    glutSwapBuffers();
+	handleEvents();
+	_myCamera->look();
+	_myTerrain->render();
+	
+	glutSwapBuffers();
 }
 
-void updateAngles( int value )
+int main( int argc, char** argv )
 {
-	_angle += 0.5f;
+	_myWindow = new Window( 400, 400, "Terrain with Textures" );
+	_myCamera = new Camera( Vector3f( 200, 0, 200 ), 0.0f, 0.0f );
+	_myTerrain = new Terrain( "vtr.bmp", "terrain_texture.bmp", 20 );
 
-	if( _angle > 360 )
-	{
-		_angle -= 360;
-	}
-
-    for( int i = 0; i < NUM_BOXES; i++ )
-    {
-        _myBoxes[i].rotate( _rotationVectors[i], _rotationRates[i] );
-    }
-
-	glutPostRedisplay();    // Tell GLUT that the scene has changed
-	// Tell GLUT to call update again in 25 milliseconds
-	glutTimerFunc( 25, updateAngles, 0 );
+	_myWindow->beginRendering();
+	return 0;
 }
 
-int main( int argc, char **argv )
-{
-    generateBoxes();
-    generateRotationVectors();
 
-    _myOctree = new Octree( Vector3f( -NUM_BOXES / 10.0f, -NUM_BOXES / 10.0f, -NUM_BOXES / 10.0f ),
-                            Vector3f( NUM_BOXES / 10.0f, NUM_BOXES / 10.0f, NUM_BOXES / 10.0f ) );
-    for( int i = 0; i < NUM_BOXES; i++ )
-    {
-        _myOctree->addBox( &_myBoxes[i] );
-    }
 
-	_myCamera = new Camera( Vector3f( 0.0f, 0.0f, 0.0f ), 0.0f, 0.0f );
-	_myCamera->setPosition( Vector3f( 0.0f, 0.0f, 0.0f ) );
 
-    glutInit( &argc, argv );
-    glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
-    glutInitWindowSize( 400, 400 );
 
-    cout << "Number of boxes: " << NUM_BOXES << endl;
 
-    glutCreateWindow( "Octree Demo" );
-    initRendering();
 
-    glutDisplayFunc( drawScene );
-    glutKeyboardFunc( keyDown );
-	glutKeyboardUpFunc( keyUp );
-	glutReshapeFunc( handleResize );
 
-	glutPassiveMotionFunc( mouseMove );
-
-	// Add a timer to initiate the updating loop
-	glutTimerFunc( 25, updateAngles, 0 );
-
-    glutMainLoop();
-    return 0;
-}
 
