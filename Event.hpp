@@ -111,6 +111,7 @@ enum KeyCode
 	KEY_TAB = '\t',
 	KEY_RETURN = '\r',
 	KEY_BACKSPACE = '\b',
+	KEY_SPACE = ' ',
 	KEY_F1 = GLUT_KEY_F1,
 	KEY_F2 = GLUT_KEY_F2,
 	KEY_F3 = GLUT_KEY_F3,
