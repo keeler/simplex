@@ -24,20 +24,20 @@ void handleEvents()
 	Event event;
 	while( _myWindow->getEvent( event ) )
 	{
-		if( event.type == KEY_DOWN && event.key.keyCode == ASCII_KEY )
+		if( event.type == KEY_PRESSED && event.keyData.isAscii )
 		{
-			if( event.key.asciiCode == 27 )
+			if( event.keyData.keyCode == KEY_ESCAPE )
 			{
 				delete _myTerrain;
 				delete _myCamera;
 				delete _myWindow;
 				exit( 1 );
 			}
-			keyState[event.key.asciiCode] = true;
+			keyState[event.keyData.keyCode] = true;
 		}
-		else if( event.type == KEY_UP && event.key.keyCode == ASCII_KEY )
+		else if( event.type == KEY_RELEASED && event.keyData.isAscii )
 		{
-			keyState[event.key.asciiCode] = false;
+			keyState[event.keyData.keyCode] = false;
 		}
 	}
 

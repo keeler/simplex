@@ -75,22 +75,22 @@ void Window::handleKeyDown( unsigned char key, int x, int y )
 	Event event;
 	memset( &event, 0, sizeof( Event ) );
 
-	event.type = KEY_DOWN;
-	event.key.keyCode = ASCII_KEY;
-	event.key.asciiCode = key;
+	event.type = KEY_PRESSED;
+	event.keyData.keyCode = static_cast<KeyCode>( key );
+	event.keyData.isAscii = true;
 
 	int mod = glutGetModifiers();
 	if( ( mod & GLUT_ACTIVE_CTRL ) != 0 )
 	{
-		event.key.ctrlPressed = true;
+		event.keyData.ctrlPressed = true;
 	}
 	if( ( mod & GLUT_ACTIVE_ALT ) != 0 )
 	{
-		event.key.altPressed = true;
+		event.keyData.altPressed = true;
 	}
 	if( ( mod & GLUT_ACTIVE_SHIFT ) != 0 )
 	{
-		event.key.shiftPressed = true;
+		event.keyData.shiftPressed = true;
 	}
 
 	eventQueue.push( event );
@@ -101,9 +101,9 @@ void Window::handleKeyUp( unsigned char key, int x, int y )
 	Event event;
 	memset( &event, 0, sizeof( Event ) );
 
-	event.type = KEY_UP;
-	event.key.keyCode = ASCII_KEY;
-	event.key.asciiCode = key;
+	event.type = KEY_RELEASED;
+	event.keyData.keyCode = static_cast<KeyCode>( key );
+	event.keyData.isAscii = true;
 
 	eventQueue.push( event );
 }
@@ -113,86 +113,86 @@ void Window::handleSpecialKeyDown( int key, int x, int y )
 	Event event;
 	memset( &event, 0, sizeof( Event ) );
 
-	event.type = KEY_DOWN;
+	event.type = KEY_PRESSED;
 	switch( key )
 	{
-		case F1:
-			event.key.keyCode = F1;
+		case KEY_F1:
+			event.keyData.keyCode = KEY_F1;
 			break;
-		case F2:
-			event.key.keyCode = F2;
+		case KEY_F2:
+			event.keyData.keyCode = KEY_F2;
 			break;
-		case F3:
-			event.key.keyCode = F3;
+		case KEY_F3:
+			event.keyData.keyCode = KEY_F3;
 			break;
-		case F4:
-			event.key.keyCode = F4;
+		case KEY_F4:
+			event.keyData.keyCode = KEY_F4;
 			break;
-		case F5:
-			event.key.keyCode = F5;
+		case KEY_F5:
+			event.keyData.keyCode = KEY_F5;
 			break;
-		case F6:
-			event.key.keyCode = F6;
+		case KEY_F6:
+			event.keyData.keyCode = KEY_F6;
 			break;
-		case F7:
-			event.key.keyCode = F7;
+		case KEY_F7:
+			event.keyData.keyCode = KEY_F7;
 			break;
-		case F8:
-			event.key.keyCode = F8;
+		case KEY_F8:
+			event.keyData.keyCode = KEY_F8;
 			break;
-		case F9:
-			event.key.keyCode = F9;
+		case KEY_F9:
+			event.keyData.keyCode = KEY_F9;
 			break;
-		case F10:
-			event.key.keyCode = F10;
+		case KEY_F10:
+			event.keyData.keyCode = KEY_F10;
 			break;
-		case F11:
-			event.key.keyCode = F11;
+		case KEY_F11:
+			event.keyData.keyCode = KEY_F11;
 			break;
-		case F12:
-			event.key.keyCode = F12;
+		case KEY_F12:
+			event.keyData.keyCode = KEY_F12;
 			break;
-		case LEFT_ARROW:
-			event.key.keyCode = LEFT_ARROW;
+		case KEY_LEFT_ARROW:
+			event.keyData.keyCode = KEY_LEFT_ARROW;
 			break;
-		case RIGHT_ARROW:
-			event.key.keyCode = RIGHT_ARROW;
+		case KEY_RIGHT_ARROW:
+			event.keyData.keyCode = KEY_RIGHT_ARROW;
 			break;
-		case DOWN_ARROW:
-			event.key.keyCode = DOWN_ARROW;
+		case KEY_DOWN_ARROW:
+			event.keyData.keyCode = KEY_DOWN_ARROW;
 			break;
-		case UP_ARROW:
-			event.key.keyCode = UP_ARROW;
+		case KEY_UP_ARROW:
+			event.keyData.keyCode = KEY_UP_ARROW;
 			break;
-		case PAGE_UP:
-			event.key.keyCode = PAGE_UP;
+		case KEY_PAGE_UP:
+			event.keyData.keyCode = KEY_PAGE_UP;
 			break;
-		case PAGE_DOWN:
-			event.key.keyCode = PAGE_DOWN;
+		case KEY_PAGE_DOWN:
+			event.keyData.keyCode = KEY_PAGE_DOWN;
 			break;
-		case HOME:
-			event.key.keyCode = HOME;
+		case KEY_HOME:
+			event.keyData.keyCode = KEY_HOME;
 			break;
-		case END:
-			event.key.keyCode = END;
+		case KEY_END:
+			event.keyData.keyCode = KEY_END;
 			break;
-		case INSERT:
-			event.key.keyCode = INSERT;
+		case KEY_INSERT:
+			event.keyData.keyCode = KEY_INSERT;
 			break;
 	}
 
 	int mod = glutGetModifiers();
 	if( ( mod & GLUT_ACTIVE_CTRL ) != 0 )
 	{
-		event.key.ctrlPressed = true;
+		event.keyData.ctrlPressed = true;
 	}
 	if( ( mod & GLUT_ACTIVE_ALT ) != 0 )
 	{
-		event.key.altPressed = true;
+		event.keyData.altPressed = true;
 	}
 	if( ( mod & GLUT_ACTIVE_SHIFT ) != 0 )
 	{
-		event.key.shiftPressed = true;
+		event.keyData.shiftPressed = true;
 	}
 
 	eventQueue.push( event );
@@ -203,86 +203,86 @@ void Window::handleSpecialKeyUp( int key, int x, int y )
 	Event event;
 	memset( &event, 0, sizeof( Event ) );
 
-	event.type = KEY_UP;
+	event.type = KEY_RELEASED;
 	switch( key )
 	{
-		case F1:
-			event.key.keyCode = F1;
+		case KEY_F1:
+			event.keyData.keyCode = KEY_F1;
 			break;
-		case F2:
-			event.key.keyCode = F2;
+		case KEY_F2:
+			event.keyData.keyCode = KEY_F2;
 			break;
-		case F3:
-			event.key.keyCode = F3;
+		case KEY_F3:
+			event.keyData.keyCode = KEY_F3;
 			break;
-		case F4:
-			event.key.keyCode = F4;
+		case KEY_F4:
+			event.keyData.keyCode = KEY_F4;
 			break;
-		case F5:
-			event.key.keyCode = F5;
+		case KEY_F5:
+			event.keyData.keyCode = KEY_F5;
 			break;
-		case F6:
-			event.key.keyCode = F6;
+		case KEY_F6:
+			event.keyData.keyCode = KEY_F6;
 			break;
-		case F7:
-			event.key.keyCode = F7;
+		case KEY_F7:
+			event.keyData.keyCode = KEY_F7;
 			break;
-		case F8:
-			event.key.keyCode = F8;
+		case KEY_F8:
+			event.keyData.keyCode = KEY_F8;
 			break;
-		case F9:
-			event.key.keyCode = F9;
+		case KEY_F9:
+			event.keyData.keyCode = KEY_F9;
 			break;
-		case F10:
-			event.key.keyCode = F10;
+		case KEY_F10:
+			event.keyData.keyCode = KEY_F10;
 			break;
-		case F11:
-			event.key.keyCode = F11;
+		case KEY_F11:
+			event.keyData.keyCode = KEY_F11;
 			break;
-		case F12:
-			event.key.keyCode = F12;
+		case KEY_F12:
+			event.keyData.keyCode = KEY_F12;
 			break;
-		case LEFT_ARROW:
-			event.key.keyCode = LEFT_ARROW;
+		case KEY_LEFT_ARROW:
+			event.keyData.keyCode = KEY_LEFT_ARROW;
 			break;
-		case RIGHT_ARROW:
-			event.key.keyCode = RIGHT_ARROW;
+		case KEY_RIGHT_ARROW:
+			event.keyData.keyCode = KEY_RIGHT_ARROW;
 			break;
-		case DOWN_ARROW:
-			event.key.keyCode = DOWN_ARROW;
+		case KEY_DOWN_ARROW:
+			event.keyData.keyCode = KEY_DOWN_ARROW;
 			break;
-		case UP_ARROW:
-			event.key.keyCode = UP_ARROW;
+		case KEY_UP_ARROW:
+			event.keyData.keyCode = KEY_UP_ARROW;
 			break;
-		case PAGE_UP:
-			event.key.keyCode = PAGE_UP;
+		case KEY_PAGE_UP:
+			event.keyData.keyCode = KEY_PAGE_UP;
 			break;
-		case PAGE_DOWN:
-			event.key.keyCode = PAGE_DOWN;
+		case KEY_PAGE_DOWN:
+			event.keyData.keyCode = KEY_PAGE_DOWN;
 			break;
-		case HOME:
-			event.key.keyCode = HOME;
+		case KEY_HOME:
+			event.keyData.keyCode = KEY_HOME;
 			break;
-		case END:
-			event.key.keyCode = END;
+		case KEY_END:
+			event.keyData.keyCode = KEY_END;
 			break;
-		case INSERT:
-			event.key.keyCode = INSERT;
+		case KEY_INSERT:
+			event.keyData.keyCode = KEY_INSERT;
 			break;
 	}
 
 	int mod = glutGetModifiers();
 	if( ( mod & GLUT_ACTIVE_CTRL ) != 0 )
 	{
-		event.key.ctrlPressed = true;
+		event.keyData.ctrlPressed = true;
 	}
 	if( ( mod & GLUT_ACTIVE_ALT ) != 0 )
 	{
-		event.key.altPressed = true;
+		event.keyData.altPressed = true;
 	}
 	if( ( mod & GLUT_ACTIVE_SHIFT ) != 0 )
 	{
-		event.key.shiftPressed = true;
+		event.keyData.shiftPressed = true;
 	}
 
 	eventQueue.push( event );
