@@ -20,8 +20,9 @@ Window::Window( unsigned int width, unsigned int height, const std::string & tit
 	glutReshapeFunc( Window::handleResize );
 	glutDisplayFunc( Window::renderScene );
 	glutKeyboardFunc( Window::handleKeyDown );
-	glutSpecialFunc( Window::handleSpecialKey );
 	glutKeyboardUpFunc( Window::handleKeyUp );
+	glutSpecialFunc( Window::handleSpecialKeyDown );
+	glutSpecialUpFunc( Window::handleSpecialKeyUp );
 	glutPassiveMotionFunc( Window::handleMouseMove );
 	glutMotionFunc( Window::handleMouseDrag );
 	glutMouseFunc( Window::handleMouseClick );
@@ -95,7 +96,20 @@ void Window::handleKeyDown( unsigned char key, int x, int y )
 	glutPostRedisplay();
 }
 
-void Window::handleSpecialKey( int key, int x, int y )
+void Window::handleKeyUp( unsigned char key, int x, int y )
+{
+	Event event;
+	memset( &event, 0, sizeof( Event ) );
+
+	event.type = KEY_UP;
+	event.key.keyCode = ASCII_KEY;
+	event.key.asciiCode = key;
+
+	eventQueue.push( event );
+	glutPostRedisplay();
+}
+
+void Window::handleSpecialKeyDown( int key, int x, int y )
 {
 	Event event;
 	memset( &event, 0, sizeof( Event ) );
@@ -186,14 +200,92 @@ void Window::handleSpecialKey( int key, int x, int y )
 	glutPostRedisplay();
 }
 
-void Window::handleKeyUp( unsigned char key, int x, int y )
+void Window::handleSpecialKeyUp( int key, int x, int y )
 {
 	Event event;
 	memset( &event, 0, sizeof( Event ) );
 
 	event.type = KEY_UP;
-	event.key.keyCode = ASCII_KEY;
-	event.key.asciiCode = key;
+	switch( key )
+	{
+		case F1:
+			event.key.keyCode = F1;
+			break;
+		case F2:
+			event.key.keyCode = F2;
+			break;
+		case F3:
+			event.key.keyCode = F3;
+			break;
+		case F4:
+			event.key.keyCode = F4;
+			break;
+		case F5:
+			event.key.keyCode = F5;
+			break;
+		case F6:
+			event.key.keyCode = F6;
+			break;
+		case F7:
+			event.key.keyCode = F7;
+			break;
+		case F8:
+			event.key.keyCode = F8;
+			break;
+		case F9:
+			event.key.keyCode = F9;
+			break;
+		case F10:
+			event.key.keyCode = F10;
+			break;
+		case F11:
+			event.key.keyCode = F11;
+			break;
+		case F12:
+			event.key.keyCode = F12;
+			break;
+		case LEFT_ARROW:
+			event.key.keyCode = LEFT_ARROW;
+			break;
+		case RIGHT_ARROW:
+			event.key.keyCode = RIGHT_ARROW;
+			break;
+		case DOWN_ARROW:
+			event.key.keyCode = DOWN_ARROW;
+			break;
+		case UP_ARROW:
+			event.key.keyCode = UP_ARROW;
+			break;
+		case PAGE_UP:
+			event.key.keyCode = PAGE_UP;
+			break;
+		case PAGE_DOWN:
+			event.key.keyCode = PAGE_DOWN;
+			break;
+		case HOME:
+			event.key.keyCode = HOME;
+			break;
+		case END:
+			event.key.keyCode = END;
+			break;
+		case INSERT:
+			event.key.keyCode = INSERT;
+			break;
+	}
+
+	int mod = glutGetModifiers();
+	if( ( mod & GLUT_ACTIVE_CTRL ) != 0 )
+	{
+		event.key.ctrlPressed = true;
+	}
+	if( ( mod & GLUT_ACTIVE_ALT ) != 0 )
+	{
+		event.key.altPressed = true;
+	}
+	if( ( mod & GLUT_ACTIVE_SHIFT ) != 0 )
+	{
+		event.key.shiftPressed = true;
+	}
 
 	eventQueue.push( event );
 	glutPostRedisplay();
@@ -264,4 +356,3 @@ void Window::handleMouseClick( int button, int state, int x, int y )
 	eventQueue.push( event );
 	glutPostRedisplay();
 }
-
