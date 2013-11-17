@@ -4,6 +4,7 @@
 #include "Camera.hpp"
 #include "Terrain.hpp"
 #include "Window.hpp"
+#include "Sound.hpp"
 #include <iostream>
 #include <cmath>
 #include <stdlib.h>
@@ -18,6 +19,8 @@ bool keyState[256] = { false };
 Terrain *_myTerrain;
 Camera *_myCamera;
 Window *_myWindow;
+Sound *_mySound;
+Vector3f *_sourcePos;
 
 void handleEvents()
 {
@@ -31,6 +34,7 @@ void handleEvents()
 				delete _myTerrain;
 				delete _myCamera;
 				delete _myWindow;
+				delete _mySound;
 				exit( 1 );
 			}
 			keyState[event.keyData.keyCode] = true;
@@ -39,6 +43,23 @@ void handleEvents()
 		{
 			keyState[event.keyData.keyCode] = false;
 		}
+	}
+
+	if( keyState['g'] )
+	{
+		*_sourcePos += Vector3f( 2, 0, 0 );
+		_mySound->setPosition( *_sourcePos );
+		_mySound->setVelocity( Vector3f( 2, 0, 0 ) );
+	}
+	if( keyState['f'] )
+	{
+		*_sourcePos -= Vector3f( 2, 0, 0 );
+		_mySound->setPosition( *_sourcePos );
+		_mySound->setVelocity( Vector3f( -2, 0, 0 ) );
+	}
+	else
+	{
+		_mySound->setVelocity( Vector3f( 0, 0, 0 ) );
 	}
 
 	if( keyState['w'] )
@@ -59,19 +80,19 @@ void handleEvents()
 	}
 	if( keyState['j'] )
 	{
-		_myCamera->rotateYaw( -0.5f );
+		_myCamera->rotateYaw( -2.5f );
 	}
 	if( keyState['l'] )
 	{
-		_myCamera->rotateYaw( 0.5f );
+		_myCamera->rotateYaw( 2.5f );
 	}
 	if( keyState['i'] )
 	{
-		_myCamera->rotatePitch( -0.5f );
+		_myCamera->rotatePitch( -2.5f );
 	}
 	if( keyState['k'] )
 	{
-		_myCamera->rotatePitch( 0.5f );
+		_myCamera->rotatePitch( 2.5f );
 	}
 }
 
@@ -93,17 +114,12 @@ int main( int argc, char** argv )
 {
 	_myWindow = new Window( 400, 400, "Terrain with Textures" );
 	_myCamera = new Camera( Vector3f( 200, 0, 200 ), 0.0f, 0.0f );
-	_myTerrain = new Terrain( "vtr.bmp", "terrain_texture.bmp", 20 );
+	_myTerrain = new Terrain( "resources/terrainmap.bmp", "resources/terrain_texture.bmp", 50 );
+	_mySound = new Sound( "resources/British Beercan, Jamaican Bacon.wav" );
+	_sourcePos = new Vector3f( 0, 0, 0 );
+
+	_mySound->play();
 
 	_myWindow->beginRendering();
 	return 0;
 }
-
-
-
-
-
-
-
-
-

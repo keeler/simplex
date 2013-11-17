@@ -4,7 +4,7 @@ PROG = main
 
 SRCS = main.cpp Math.cpp OrientedBoundingBox.cpp Octree.cpp Camera.cpp Texture.cpp ImageLoader.cpp Terrain.cpp Window.cpp Sound.cpp SoundLoader.cpp
 
-LIBS = -lglut -lGLU -lopenal -lalut
+LIBS = -lglut -lGLU -lGL -lopenal -lalut
 
 all: $(PROG)
 
